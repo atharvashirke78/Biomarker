@@ -15,6 +15,7 @@ include { REF_FETCH; REF_FILTER; REF_GENOME_FILTER; REF_TABLES; SALMON_INDEX } f
 include { STAR_INDEX; STAR_ALIGN                         } from '../modules/star'
 include { SAMTOOLS_SORT_INDEX; SAMTOOLS_STATS            } from '../modules/samtools'
 include { GTF_TO_BED12; STRAND_CHECK; MERGE_STRAND_CHECK } from '../modules/strand_check'
+include { RNAQC_SUBSET; RNAQC_SAMPLE; MERGE_RNAQC } from '../modules/rna_qc'
 include { SALMON_QUANT                                   } from '../modules/salmon'
 include { FEATURECOUNTS                                  } from '../modules/featurecounts'
 include { SAMPLE_QC_FLAGS; MERGE_SAMPLE_QC               } from '../modules/sample_qc'
@@ -25,6 +26,7 @@ include { PATHWAY_ORA; PATHWAY_GSEA                      } from '../modules/path
 include { MAKE_CONTRACT; VALIDATE_ANALYSIS_INPUT as VALIDATE_PRIMARY; VALIDATE_ANALYSIS_INPUT as VALIDATE_SECONDARY; WRITE_MANIFEST as MANIFEST_QUANT; WRITE_MANIFEST as MANIFEST_ANALYSIS } from '../modules/contract'
 include { MULTIQC; QC_COPY_FASTP                         } from '../modules/multiqc'
 include { DISCOVER_INPUT_CHECK; DISCOVER_DESEQ2 as DISCOVER_DESEQ2_PRIMARY; DISCOVER_DESEQ2 as DISCOVER_DESEQ2_SECONDARY; CANDIDATE_RULES; FIT_MODEL; PACKAGE_MODEL } from '../modules/discover'
+include { NESTED_VALIDATION } from '../modules/nested_validation'      // opt-in (params.run_nested_validation): candidate screen repeated inside every training fold, report-only
 include { INTERNAL_VALIDATION } from '../modules/internal_validation'     // upgrade H3: additive internal validation, report-only (params.run_internal_validation)
 include { folderInput; runStartInfo; startupChecks; FILTER_CLINICAL; CHECK_QC } from '../modules/folder_input'
 include { LOCKED_SCORE                                  } from '../modules/lock_score'
@@ -194,6 +196,13 @@ workflow QUANT_STAGE {
             ch_strand = MERGE_STRAND_CHECK.out.table
         }
         FEATURECOUNTS(unkey(keyL(SAMTOOLS_SORT_INDEX.out.bam).join(keyR(SALMON_QUANT.out.quant))), REFERENCE.out.gtf)
+        if (params.run_rnaqc && params.run_strand_check) {       // flag-only RNA-QC metrics (RSeQC + featureCounts); shares the BED12 gene model of the strandedness check
+            RNAQC_SUBSET(GTF_TO_BED12.out.bed)
+            RNAQC_SAMPLE(unkey(keyL(SAMTOOLS_SORT_INDEX.out.bam).join(keyR(FEATURECOUNTS.out.counts.map { m, c, s -> [m, c] }))),
+                         GTF_TO_BED12.out.bed, RNAQC_SUBSET.out.tin, RNAQC_SUBSET.out.genebody, REFERENCE.out.symbols)
+            MERGE_RNAQC(RNAQC_SAMPLE.out.row.map { m, f -> f }.collect(), MAKE_SAMPLE_MAP.out.map)
+            ch_rnaqc = MERGE_RNAQC.out.table
+        }
         // SAMPLE_QC_FLAGS input: meta, star_log, fc_summary, quant, fastp_json
         ch_qc_in = keyL(SALMON_QUANT.out.quant)                        // [id, meta, quant]
             .join(keyR(STAR_ALIGN.out.log))                            // + star_log
@@ -250,7 +259,7 @@ workflow QUANT_STAGE {
     QC_COPY_FASTP(FASTP.out.json_only.mix(FASTP.out.html).collect(), smap)
 
     emit:
-    cohort_plots = COHORT_QC.out.pca.mix(COHORT_QC.out.heatmap, COHORT_QC.out.libsize, COHORT_QC.out.flags, COHORT_QC.out.summary, COHORT_QC.out.sex).mix(run_star && params.run_strand_check ? ch_strand : Channel.empty()).collect()   // plots + flags/summary/sex files (the report lists their WARNING lines)
+    cohort_plots = COHORT_QC.out.pca.mix(COHORT_QC.out.heatmap, COHORT_QC.out.libsize, COHORT_QC.out.flags, COHORT_QC.out.summary, COHORT_QC.out.sex).mix(run_star && params.run_strand_check ? ch_strand : Channel.empty()).mix(run_star && params.run_strand_check && params.run_rnaqc ? ch_rnaqc : Channel.empty()).collect()   // plots + flags/summary/sex files (the report lists their WARNING lines)
     sample_qc = MERGE_SAMPLE_QC.out.table
     counts   = MAKE_CONTRACT.out.counts
     sal_counts = MAKE_CONTRACT.out.sal_counts
@@ -440,6 +449,10 @@ workflow RUN_PIPELINE {
                 INTERNAL_VALIDATION(DISCOVER_INPUT_CHECK.out.counts_training, DISCOVER_INPUT_CHECK.out.sheet, CANDIDATE_RULES.out.table,
                                     FIT_MODEL.out.genes, FIT_MODEL.out.spec, FIT_MODEL.out.scores)
                 ch_valid = INTERNAL_VALIDATION.out.summary.mix(INTERNAL_VALIDATION.out.freq, INTERNAL_VALIDATION.out.md).collect()   // the report waits for the step and shows its files
+            }
+            if (params.run_nested_validation) {          // opt-in, slow: fully nested estimate (rules 1-2 screen inside each fold) + label-permutation null
+                NESTED_VALIDATION(DISCOVER_INPUT_CHECK.out.counts_training, DISCOVER_INPUT_CHECK.out.sheet, rules, thr, qcfg)
+                ch_valid = ch_valid.mix(NESTED_VALIDATION.out.summary, NESTED_VALIDATION.out.freq, NESTED_VALIDATION.out.nulltab, NESTED_VALIDATION.out.md).collect()
             }
             // ---- end upgrade H3
         }

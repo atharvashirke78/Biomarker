@@ -258,6 +258,11 @@ if os.path.isdir(_vd):
               md_table(rows(os.path.join(_vd, 'selection_frequency.tsv')), ['gene_id', 'symbol', 'direction', 'frequency', 'in_final_model']), '']
     if os.path.exists(os.path.join(_vd, 'INTERNAL_VALIDATION.md')):
         L += ['**INTERNAL_VALIDATION.md:**', ''] + [f'**{l.lstrip("# ")}**' if l.startswith('#') else l for l in open(os.path.join(_vd, 'INTERNAL_VALIDATION.md')).read().splitlines()] + ['']
+_ns = os.path.join(_vd, 'nested_validation_summary.tsv')
+if os.path.exists(_ns):
+    L += ['## Nested internal validation (candidate screen repeated inside every training fold)', '',
+          'Rules 1-2, LASSO, score and cutoff are all re-done on the training samples of each fold and the held-out fold is scored with that model, so the gene selection cannot see the samples it is scored on. Rules 3a and 3b are not run, so this estimates the simplified procedure, not the full locked one. It is internal, not independent validation. The permutation null shows what AUC the same procedure reaches on shuffled labels.', '',
+          md_table(rows(_ns), ['metric', 'value', 'ci_low', 'ci_high', 'label']), '']
 # ---- warnings written by input scan / cohort QC (lines that begin with WARNING); input notes are already listed in section 1
 _seen = set(inp['notes']) if inp else set()
 _w = []
@@ -273,6 +278,15 @@ for _f in sorted(glob.glob(J('pipeline', 'quant', '05_cohort_qc', '*'))):
 _w = [w for i, w in enumerate(_w) if w not in _seen and w not in _w[:i]]
 if _w:
     L += ['## Warnings from the cohort QC', ''] + [f'- {w}' for w in _w] + ['']
+_rqp = J('pipeline', 'quant', '05_cohort_qc', 'rna_qc_metrics.tsv')
+_rq = rows(_rqp) if os.path.exists(_rqp) else []
+if _rq:
+    _fl = [r for r in _rq if r.get('flags') and not r['flags'].startswith('not enough')]
+    L += ['## RNA quality metrics (flag only)', '',
+          'Per-sample metrics from RSeQC and the featureCounts file: exonic and intronic read share, position-based duplication, transcript integrity number (TIN, median over a seeded random subset of transcripts), 3\'/5\' gene-body coverage ratio (our own definition, not Picard\'s), rRNA and mitochondrial share of assigned reads. '
+          'No published pass/fail cut-offs exist for these metrics, so a sample is only flagged when it is an outlier relative to the rest of this cohort (robust z-score beyond the cohort-outlier cut-off); with fewer than 5 samples nothing is flagged. Flags never exclude a sample or change a QC status.', '',
+          (f'**{len(_fl)} of {len(_rq)} sample(s) flagged:** ' + '; '.join(f"{r['srr']}: {r['flags']}" for r in _fl)) if _fl else ('No sample is an outlier on these metrics.' if len(_rq) >= 5 else f'Only {len(_rq)} samples: metrics are listed, no cohort flags are computed.'), '',
+          md_table(_rq, [c for c in ('srr', 'exonic_pct', 'intronic_pct', 'dup_rate_pct', 'tin_median', 'bias_3p_5p', 'rrna_pct', 'mito_pct') if c in _rq[0]]), '']
 _scp = J('pipeline', 'quant', '05_cohort_qc', 'strandedness_check.tsv')
 _sc = rows(_scp) if os.path.exists(_scp) else []
 if _sc:

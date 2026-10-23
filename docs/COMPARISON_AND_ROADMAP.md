@@ -42,10 +42,10 @@ Biomarker-modelling tools (V on CRAN pages): `nestedcv` 0.9.0 (MIT, nested CV wi
 6. Fix the open upload race and add retention and quota rules in the service.
 
 **B. Medium effort**
-7. QC metrics: rRNA %, duplication, 3' bias or TIN, gene-body coverage, contamination screen; cohort-derived flags first, gates only after calibration.
+7. **PARTLY DONE 2026-10-23:** QC metrics from RSeQC and featureCounts (rRNA %, mito %, exonic/intronic share, duplication, TIN, 3'/5' coverage ratio) as cohort-relative flags (`rna_qc_metrics.tsv`). Not done: Picard `CollectRnaSeqMetrics`, dupRadar, contamination screen (new environments needed).
 8. Containers (docker / apptainer) and a pinned release tag, so a run is independent of the pod's conda state.
 9. Permutation-label null for the cross-validated AUC (show the pipeline does not give high AUC on random labels).
-10. Candidate screen inside the resampling loop (a fully nested estimate). Needs a decision: `nestedcv` with a custom DESeq2 filter, or our own wrapper.
+10. **DONE (opt-in) 2026-10-23:** `nested_full_validation.R` repeats DESeq2 and rules 1-2 inside every training fold, with a label-permutation null (`run_nested_validation`, default off). Rules 3a/3b are not repeated. Tested on 19 samples with small settings and on synthetic noise (nested AUC 0.43 against 0.80 when screening on all samples); default settings (about 60 min estimated) not yet run.
 11. Service: user accounts with roles, append-only audit log, per-run sharing. Needed before any compliance wording.
 12. Contrasts file with blocking and a second DE method (limma-voom) as a cross-check.
 
