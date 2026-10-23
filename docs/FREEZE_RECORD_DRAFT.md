@@ -103,15 +103,13 @@ One command a new person runs (details: `docs/RUN_IN_5_STEPS.md`):
 
 `my_run` holds the FASTQ files and `metadata.csv`. Results go to `my_run/Result` (change with `--output_dir`). Add `--mode apply --cohort development` to score samples with the locked 9-gene model instead of discovering biomarkers.
 
-## 7. Frozen code identity (updated 2026-10-23)
+## 7. Frozen code identity (updated 2026-10-23, after the RNA-QC and nested-validation additions)
 
-Repository `https://github.com/atharvashirke78/Biomarker`, branch `main`, code commit `a2c8890` (first commit of this repository; it does not contain the history of `/workspace/Biomarker_pipeline`, whose commit `46c4860` was the base of the code and whose lock tag is `lock-diagnostic-v1`).
+Repository `https://github.com/atharvashirke78/Biomarker`, branch `main`. Code commit `8f5d33c`; earlier points: tag `v0.9.0-rc1` = `c5e3ecf` (before the LICENSE file, RNA-QC metrics and nested validation). This repository starts at `a2c8890` and does not contain the history of `/workspace/Biomarker_pipeline` (base commit `46c4860`, lock tag `lock-diagnostic-v1`).
 
-`docs/FROZEN_FILES.sha256` lists the sha256 of the 186 tracked files in `nextflow/ modules/ scripts/ conf/ config/ lock/ tests/ service/ env/` as committed in `a2c8890`. Check from the repository root: `sha256sum -c docs/FROZEN_FILES.sha256` (0 failures on 2026-10-23). sha256 of that list: `728bd73308efeef5ac35deab0bbeb791fa2af6b1d5099e5d6fb84bc319b08128`.
-Lock: `sha256sum -c lock/diagnostic_v1/sha256sums_final.txt` gives 7 of 7 OK.
+`docs/FROZEN_FILES.sha256` lists the sha256 of the 195 tracked files in `nextflow/ modules/ scripts/ conf/ config/ lock/ tests/ service/ env/` as committed in `8f5d33c`. Check from the repository root: `sha256sum -c docs/FROZEN_FILES.sha256` (0 failures when written, 2026-10-23). sha256 of that list: `a0443f1591b9b0389e44648ec1998932ac059653cd336d55b44c8b839400dd82`.
+Lock: `sha256sum -c lock/diagnostic_v1/sha256sums_final.txt` gives 7 of 7 OK. The three older manifests are in `archive/freeze_history/` and no longer match the tree.
 
-The three older manifests (2026-10-21, standardized, upgrade 2026-10-22) are in `archive/freeze_history/` and no longer match the tree; they are kept only as history.
+Tests at `8f5d33c`: stub suite 91 passed, 0 failed, 0 skipped (the byte-identity guard runs from `tests/fixtures/fit_diagnostic_model.46c4860.R`); service tests 24 of 24; strandedness and RNA-QC unit tests 14 of 14; nested-validation test (`tests/regression/test_nested_full_validation.sh`, small settings, 19-sample matrix plus a synthetic noise case) passed in its author's run; real 6-sample demo runs: 83 of 83 tasks, featureCounts counts byte-identical to the earlier run, sample QC statuses identical (Salmon mapped % differs in the last digit: known Salmon non-determinism). Not run in this repository: the 19-sample regression and numeric acceptance (they need the 19-sample result folders), the nested validation at default settings, and the 15-sample independent validation.
 
-Test state at `a2c8890` plus this file: stub suite 90 passed, 0 failed, 1 skipped (the byte-identity test against commit `46c4860` needs that commit's history); service tests 24 of 24; strandedness unit tests 7 of 7; real demo run (6 samples) 83 of 83 tasks, featureCounts counts byte-identical to the earlier run, sample QC statuses identical (Salmon mapped % differs in the last digit for 2 samples: known Salmon non-determinism). Not re-run in this repository: the 19-sample regression and the numeric acceptance (they need the 19-sample result folders).
-
-Note on sections 1-6 above: they describe the 2026-10-21 cycle and the old checkout; where they name `/workspace/Biomarker_pipeline_onewf` or "uncommitted", section 7 replaces them.
+Sections 1-6 above describe the 2026-10-21 cycle and the old checkout; where they name `/workspace/Biomarker_pipeline_onewf` or "uncommitted", this section replaces them.
