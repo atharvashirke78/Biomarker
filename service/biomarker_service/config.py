@@ -3,7 +3,7 @@ import os
 import re
 import sys
 
-CODE_DIR = os.environ.get('BIOMARKER_CODE_DIR', '/workspace/Biomarker_pipeline_onewf')
+CODE_DIR = os.environ.get('BIOMARKER_CODE_DIR') or os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..'))      # the checkout this service belongs to
 INSTALL_DIR = os.environ.get('BIOMARKER_INSTALL_DIR', '/workspace/Biomarker_pipeline')
 NEXTFLOW_BIN = os.environ.get('NEXTFLOW_BIN', os.path.join(INSTALL_DIR, 'env', 'bin', 'nextflow'))
 SCANNER_PYTHON = os.environ.get('SERVICE_SCANNER_PYTHON', os.path.join(INSTALL_DIR, 'env', 'prefix', 'pyqc', 'bin', 'python3'))

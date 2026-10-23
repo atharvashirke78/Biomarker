@@ -6,7 +6,7 @@ Columns: sample, exonic_pct, intronic_pct, dup_rate_pct, tin_median, bias_3p_5p,
 - dup_rate_pct: position-based duplication, 100 * (1 - reads at positions seen once / all reads) from read_duplication.py.
 - tin_median: median transcript integrity number on a seeded random subset of transcripts (lower = more degradation).
 - bias_3p_5p: mean gene-body coverage in percentile bins 81-100 divided by bins 1-20 (own definition; transcripts are oriented 5'->3'; >1 = 3' bias). Not Picard's metric.
-- rrna_pct, mito_pct: share of featureCounts-assigned reads on genes of type rRNA / Mt_rRNA, and on chrM genes."""
+- rrna_pct, mito_pct: share of featureCounts-assigned reads on ANNOTATED genes of type rRNA / Mt_rRNA, and on chrM genes. rrna_pct is a LOWER BOUND: the primary-chromosome GENCODE annotation lacks the rDNA arrays and featureCounts -Q drops multi-mapped reads, so a rRNA-contaminated library can still look clean."""
 import csv
 import re
 import sys

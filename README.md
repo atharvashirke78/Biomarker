@@ -5,9 +5,9 @@ Colon tissue, tumour vs normal, human paired-end bulk RNA-seq. One Nextflow work
 
 > This README describes the branch `feat/one-workflow` (not merged, not committed yet). Every number below was measured on the development pod (16 CPUs, 64 GB memory); items that were not tested are marked **NOT TESTED**.
 >
-> **Status of this version (2026-10-22):** the standardized scripts (input checks, group aliases, pod-based resource budget, tool versions in the manifest) pass the scanner tests (30 of 30), the stub suite (87 of 88; the one failing test needs git history that a copy lacks) and the service tests (21 of 21). Their **real-data validation run on the 19 development samples was still in progress** when this was written and has not been compared with the earlier run. Until that comparison is done, treat the numbers in sections 8 and 10 as results of the earlier version.
+> **Status of this version (2026-10-23):** scanner tests 30 of 30 (as of 2026-10-22), stub suite 91 cases (90 pass and 0 fail at the last full run, plus the byte-identity guard that now runs from a vendored fixture), service tests 24 of 24, strandedness and RNA-QC unit tests 14 of 14. A real 6-sample demo run (83 of 83 tasks) reproduced the earlier featureCounts counts byte for byte. The 19-sample real-data comparison and the 15-sample independent validation have **not** been run in this repository; treat the numbers in sections 8 and 10 as results of the earlier version.
 >
-> **Working copy (2026-10-23):** this folder (`/workspace/atharva_pips`) is the upgrade copy of `/workspace/Biomarker_pipeline_onewf`, taken after the audit fixes: dev paths removed from `nextflow/nextflow.config`, job service hardened (Host and Origin checks, JSON-only writes, optional token, sandboxed reports; service tests 23 of 23). It is not a git repository yet. Paths in the docs and in `service/biomarker_service/config.py` still name the original checkout and install (`BIOMARKER_CODE_DIR`, `BIOMARKER_INSTALL_DIR`); set them to run from here.
+> **Repository (2026-10-23):** public at `https://github.com/atharvashirke78/Biomarker` (MIT, see `LICENSE`), history starting at commit `a2c8890` (release candidate tag `v0.9.0-rc1`). Code, service and pipeline resolve their own location (`code_dir` from `nextflow/`, the service from its own folder); the tool environments and the reference are still read from the install folder `BIOMARKER_INSTALL_DIR` (default `/workspace/Biomarker_pipeline`). Job service hardened: Host and Origin checks, JSON-only writes, optional token, sandboxed reports.
 >
 > For the team that builds a user interface on top of this pipeline: read `docs/INTEGRATION_GUIDE.md` (input rules, command, outputs, status) and `service/README.md` (the thin job service).
 
@@ -17,7 +17,7 @@ Colon tissue, tumour vs normal, human paired-end bulk RNA-seq. One Nextflow work
 
 | Pipeline | What it does | Status |
 |---|---|---|
-| **Diagnostic, one workflow** (`nextflow/main.nf`, entry `RUN`) | FASTQ folder in, report out. Mode `discover` (find biomarkers) or `apply` (score with the locked model) | Built. Stub suite 66 of 66; regression on the 19 development samples passes; real runs on development samples only |
+| **Diagnostic, one workflow** (`nextflow/main.nf`, entry `RUN`) | FASTQ folder in, report out. Mode `discover` (find biomarkers) or `apply` (score with the locked model) | Built. Stub suite 90 of 91; regression on the 19 development samples passes; real runs on development samples only |
 | **Locked diagnostic model** (`lock/diagnostic_v1/`) | 9 genes (8 up: KRT80, KRT23, GRIN2D, FUT1, ETV4, LARGE2, VSNL1, GTF2IRD1; 1 down: OSR1), cutoff 1.352325902, hash-checked, never changed by a run | Locked 2026-10-14 (tag `lock-diagnostic-v1`) |
 | **Independent validation** (15 held-out samples) | Apply the locked model once, pre-registered pass rule | **Not run yet** |
 | Older entries `-entry QUANT`, `ANALYSIS`, `DISCOVER` and launchers `scripts/rnaseq.sh`, `run_diagnostic.sh`, `run_validation.sh` | The steps of the workflow one at a time | Kept, behaviour unchanged |
@@ -201,19 +201,20 @@ The figures below come from 6 **development** samples (3 normal, 3 tumour), 100,
 | Work space | about 13 GB per full-size sample (the free-disk check on a shared volume is a warning only) |
 | 19 samples (10 normal, 9 tumour, about 2 GB FASTQ pairs), discover mode, 16 CPUs / 64 GB | **2 h 49 min 54 s** (run `ecstatic_noyce`, 21 October): the per-sample steps take about 2 h 45 min (Salmon alone about 2.9 CPU-hours, median 9.4 min per sample), the cohort steps (DESeq2, pathways, candidate rules, LASSO, report) about 5 min |
 | How many jobs run at once | set by the pod: STAR needs 33 GB and 8 CPUs per job, Salmon 28 GB and 8 CPUs. Salmon jobs at once = min(RAM / 28 GB, CPUs / 8); STAR jobs at once = max(1, RAM / 33 GB) and at most CPUs / 8. On the 64 GB / 16-CPU pod: **2 Salmon and 1 STAR** (measured peak concurrency in the 19-sample run). A larger pod raises this (for example 4 Salmon jobs need about 112 GB and 32 CPUs); **NOT TESTED** on a larger pod |
+| RNA-QC metrics (RSeQC) per full-size sample, measured on a 2.6 GB BAM on a heavily loaded host | read distribution 231 s / 1.3 GB, duplication 174 s / 2.4 GB, TIN (5,000 transcripts) 495 s, gene-body coverage (1,000 transcripts) 146 s, strandedness 6 s: about 17.5 min and at most 2.4 GB per sample on one CPU, in parallel with the STAR jobs. Switch off with `run_rnaqc = false` |
 | Several runs at once on one pod | **not supported**: each Nextflow run assumes it owns the whole pod. Run one job at a time per pod (the service in `service/` queues jobs for this reason) |
 
 ## 10. Tests and verification
 
 | Test | Result |
 |---|---|
-| Stub suite (`tests/integration/one_workflow_stub.sh`): structure, resume, apply, stop-after, startup checks, input errors, report | 66 of 66 pass |
+| Stub suite (`tests/integration/one_workflow_stub.sh`): structure, resume, apply, stop-after, startup checks, input errors, report, strandedness and RNA-QC wiring | 90 of 91 at the last full run (the 91st, a byte-identity guard, now runs from a vendored fixture) |
 | Regression on the 19 development samples (`tests/regression/run_regression_branch.sh`): decisions | 30 of 30 pass; diagnostic checks 48 of 48 |
 | Numeric acceptance against a control run of the frozen code on the same pod (`check_numeric_tolerance.py`, tolerance 1e-5) | accepted; 45 data files byte-identical |
 | Apply on the 3 development samples (07:41 code) | counts identical to the 8-9 October counts |
 | Real run on the **15 validation samples** | **not run** |
 | Input scanner tests (`tests/integration/test_input_scan.py`): naming styles, aliases, missing mates, duplicates, metadata errors, per-group minimum | 30 of 30 pass |
-| Thin job service (`service/tests`, a stand-in replaces Nextflow, the real pipeline is not started): upload rules, validation, queue order, cancel, resume, delete, workflow-chart statuses, summary and figures, report download, localhost-only guard | 21 of 21 pass (the page's JavaScript has never run in a browser: no browser on the pod) |
+| Thin job service (`service/tests`, a stand-in replaces Nextflow, the real pipeline is not started): upload rules, validation, queue order, cancel, resume, delete, workflow-chart statuses, summary and figures, report download, localhost-only guard | 24 of 24 pass (the page's JavaScript has never run in a browser: no browser on the pod) |
 | Small cohort (6 samples, 3 + 3, single batch) through the real DESeq2, candidate-rule and model scripts | runs to the end; rule 3b is reported NOT EVALUABLE and no model is fitted (see section 11) |
 
 ## 11. Known limits

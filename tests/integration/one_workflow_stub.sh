@@ -198,7 +198,7 @@ check "report (no model): real reason (rule 3b not evaluable), no stray '(none)'
 check "report: 04_validation block and cohort-QC WARNING lines shown only when present" "grep -q 'Internal validation (pipeline/discover/04_validation' $NM/report/report.md && grep -q 'AUC_nested' $NM/report/report.md && grep -q 'WARNING: test line' $NM/report/report.md"
 check "fix 1: RESULTS_INDEX_RUN.md and the DISCOVER_SUMMARY.md template name the tissue" "grep -q 'Case vs reference groups as given in the metadata' $R1/RESULTS_INDEX_RUN.md && grep -q 'Case vs reference groups as given in the metadata' $HERE/nextflow/bin/package_model.py && grep -q 'Case vs reference groups as given in the metadata' $HERE/nextflow/main.nf"
 # fix 3: with every sample its own patient the model fit is byte-identical to the previous script; with repeated patients the folds keep a patient together
-FT=$WORK/fit_test; mkdir -p $FT/old $FT/new $FT/pair $FT/pair_default; git -C "$HERE" show 46c4860:nextflow/bin/fit_diagnostic_model.R > $FT/fit_old.R 2>/dev/null
+FT=$WORK/fit_test; mkdir -p $FT/old $FT/new $FT/pair $FT/pair_default; cp "$HERE/tests/fixtures/fit_diagnostic_model.46c4860.R" $FT/fit_old.R     # the script of commit 46c4860, kept as a fixture so the test needs no git history
 (cd $FT && "$RSC" - > $FT/fixture.log 2>&1 <<'REOF'
 set.seed(7); smp <- c(paste0("N", 1:6), paste0("T", 1:6)); g <- sprintf("ENSG%08d.1", 1:40)
 cn <- matrix(rpois(40 * 12, 200), 40, 12, dimnames = list(g, smp)); cn[1:8, 7:12] <- cn[1:8, 7:12] * 3; cn[9:12, 1:6] <- cn[9:12, 1:6] * 3
@@ -213,9 +213,7 @@ REOF
 fitrun() { (cd "$FT/$1" && "$RSC" "$2" --counts ../counts.tsv --sheet ../$3 --candidates ../cand.tsv --de ../de.tsv --questions ../q.yaml --method-note ../note.txt "${@:4}" > fit.log 2>&1); }
 fitrun old "$FT/fit_old.R" sheet_unique.tsv; fitrun new "$HERE/nextflow/bin/fit_diagnostic_model.R" sheet_unique.tsv; fitrun pair "$HERE/nextflow/bin/fit_diagnostic_model.R" sheet_paired.tsv --patient-level-cv true; fitrun pair_default "$HERE/nextflow/bin/fit_diagnostic_model.R" sheet_paired.tsv
 SAME=1; for f in model_genes.tsv model_spec.txt inner_fold_cutoffs.tsv development_scores.tsv development_performance.tsv; do cmp -s $FT/old/$f $FT/new/$f || SAME=0; done
-if [[ -s $FT/fit_old.R ]]; then
 check "fix 3: every sample its own patient -> model fit byte-identical to the previous script" "[[ $SAME == 1 && -s $FT/old/model_genes.tsv ]]"
-else echo "SKIP  fix 3: byte-identical to the previous script (commit 46c4860 is not in this repository's history; not counted as pass or fail)"; fi
 check "fix 3: repeated patients + --patient-level-cv true -> spec says samples of a patient are kept together (and the fit runs)" "grep -q 'all samples of one patient are kept together in the folds' $FT/pair/model_spec.txt"
 check "fix 3: repeated patients, DEFAULT (switch off) -> sample-level folds, fit runs, no 'kept together' text" "[[ -s $FT/pair_default/model_genes.tsv ]] && ! grep -q 'kept together' $FT/pair_default/model_spec.txt"
 (cd $FT && "$RSC" - > $FT/folds.out 2>&1 <<REOF
