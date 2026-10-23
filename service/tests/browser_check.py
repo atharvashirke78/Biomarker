@@ -60,7 +60,7 @@ def make_finished_job():
     w('05_cohort_qc/rna_qc_metrics.tsv', 'srr\tlabel\texonic_pct\tintronic_pct\tdup_rate_pct\ttin_median\tbias_3p_5p\trrna_pct\tmito_pct\tflags\nS1\tS1\t98\t1\t10\t60\t1\t1\t1\t\nS2\tS2\t90\t9\t50\t20\t4\t1\t1\ttin_median low (robust z -4.0)\n')
     w('09_discover/04_validation/nested_validation_summary.tsv', 'metric\tvalue\tci_low\tci_high\tlabel\nAUC_nested_pooled\t0.9\t0.7\t1\tNESTED, rules 1-2 only; NOT independent validation\n')
     w('10_report/report/report.html', '<html><body><h1>report</h1><script>window.x=1</script></body></html>')
-    db.update(jid, status='succeeded', message='finished; report written')
+    db.update(jid, status='succeeded', message='finished; report written', started=time.time() - 3720, finished=time.time())      # 1 h 2 min
     return jid
 
 
@@ -102,6 +102,27 @@ try:
     d.find_element(By.ID, 'nav-about').click()
     check('About tab opens', not d.find_element(By.ID, 'page-about').get_attribute('hidden'))
     d.find_element(By.ID, 'nav-run').click()
+    # Jobs table: time taken
+    heads = [h.text for h in d.find_elements(By.CSS_SELECTOR, '#rows')[0].find_element(By.XPATH, '../thead').find_elements(By.TAG_NAME, 'th')]
+    check('Jobs table has a "Time taken" column', 'Time taken' in heads, str(heads))
+    wait(d, lambda x: x.find_elements(By.CSS_SELECTOR, '[data-sel="%s"]' % jid))
+    row = d.find_element(By.CSS_SELECTOR, '[data-sel="%s"]' % jid).find_element(By.XPATH, '../..').text
+    check('finished job shows its duration (1 h 2 min)', '1 h 2 min' in row, row.replace('\n', ' | ')[:90])
+    # day / night mode
+    bg0 = d.execute_script("return getComputedStyle(document.body).backgroundColor")
+    th0 = d.execute_script("return document.documentElement.getAttribute('data-theme')")
+    d.find_element(By.ID, 'theme').click()
+    bg1 = d.execute_script("return getComputedStyle(document.body).backgroundColor")
+    th1 = d.execute_script("return document.documentElement.getAttribute('data-theme')")
+    check('theme button switches the colours', th0 != th1 and bg0 != bg1, '%s %s -> %s %s' % (th0, bg0, th1, bg1))
+    d.refresh()
+    time.sleep(1)
+    th2 = d.execute_script("return document.documentElement.getAttribute('data-theme')")
+    check('theme choice survives a reload', th2 == th1, th2)
+    inject_error_log(d)
+    d.save_screenshot(os.path.join(scratch, 'theme_%s.png' % th1))
+    d.find_element(By.ID, 'theme').click()
+    check('theme can be switched back', d.execute_script("return document.documentElement.getAttribute('data-theme')") == th0)
     # open the finished job from the jobs table
     wait(d, lambda x: x.find_elements(By.CSS_SELECTOR, '[data-sel]'))
     d.find_element(By.CSS_SELECTOR, '[data-sel="%s"]' % jid).click()

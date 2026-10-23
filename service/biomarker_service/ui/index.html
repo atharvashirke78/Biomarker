@@ -1,9 +1,13 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Biomarker pipeline</title>
+<script>try{var __t=localStorage.getItem('theme');if(__t==='light'||__t==='dark')document.documentElement.setAttribute('data-theme',__t)}catch(e){}</script>
 <style>
-:root{--bg:#f4f6fa;--fg:#1c2330;--card:#fff;--line:#d9dee7;--accent:#1f5fbf;--accent2:#0e8f6b;--warn:#a86a00;--bad:#b3261e;--ok:#1b6e3c;--mute:#8a93a3;--box:#eef1f6}
-@media (prefers-color-scheme:dark){:root{--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}}
+:root{color-scheme:light;--bg:#f4f6fa;--fg:#1c2330;--card:#fff;--line:#d9dee7;--accent:#1f5fbf;--accent2:#0e8f6b;--warn:#a86a00;--bad:#b3261e;--ok:#1b6e3c;--mute:#8a93a3;--box:#eef1f6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}}
+:root[data-theme=dark]{color-scheme:dark;--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}
+.themebtn{position:absolute;right:0;top:0;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.4);margin:0}.themebtn:hover{background:rgba(255,255,255,.26)}header .in{position:relative}
+button:disabled{opacity:.5;cursor:default}td.dur{white-space:nowrap}
 *{box-sizing:border-box}body{font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg);margin:0}
 header{background:linear-gradient(120deg,#16396e,#0e6b66);color:#fff;padding:18px 16px}
 header .in{max-width:1100px;margin:0 auto}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.9;font-size:14px}
@@ -40,7 +44,7 @@ rect.bar{fill:var(--warn)}.st-done rect.bar{fill:var(--ok)}
 .gauges{display:grid;gap:6px}.gauge{display:grid;grid-template-columns:190px 1fr 150px;gap:8px;align-items:center;font-size:13px}.gb{height:10px;background:var(--box);border-radius:5px;overflow:hidden}.gb span{display:block;height:100%;background:var(--accent);transition:width .6s}
 .about h3{margin-top:18px}.about li{margin:3px 0}.about .pill{margin-right:4px}
 </style></head><body>
-<header><div class="in"><h1>RNA-seq biomarker discovery pipeline</h1><p>From paired FASTQ files to QC, differential expression, candidate biomarker genes and a report &mdash; in one automated run.</p></div></header>
+<header><div class="in"><button id="theme" class="themebtn" type="button" title="Switch between day and night mode">Night mode</button><h1>RNA-seq biomarker discovery pipeline</h1><p>From paired FASTQ files to QC, differential expression, candidate biomarker genes and a report &mdash; in one automated run.</p></div></header>
 <main>
 <div class="notice">Research use only. Results are not clinically validated; candidate biomarkers need independent validation.</div>
 <div class="nav"><button id="nav-run" class="on">Run</button><button id="nav-about">About this pipeline</button></div>
@@ -69,7 +73,7 @@ rect.bar{fill:var(--warn)}.st-done rect.bar{fill:var(--ok)}
 <div class="tabs"><button data-t="summary" class="on">Summary</button><button data-t="figures">Figures</button><button data-t="log">Log</button></div>
 <div id="tab-summary"></div><div id="tab-figures" hidden></div><div id="tab-log" hidden><pre id="log">select a job</pre></div></div>
 
-<div class="card"><h2>Jobs</h2><table><thead><tr><th>Job</th><th>Name</th><th>Status</th><th>Message</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+<div class="card"><h2>Jobs</h2><table><thead><tr><th>Job</th><th>Name</th><th>Status</th><th>Time taken</th><th>Message</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
 </div>
 
 <div id="page-about" class="card about" hidden>
@@ -110,7 +114,8 @@ rect.bar{fill:var(--warn)}.st-done rect.bar{fill:var(--ok)}
 <script>
 let cur=null,tab='summary',sampleRows=[],chosen=[],curEditable=false;const $=id=>document.getElementById(id);
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
-async function api(m,u,b){const r=await fetch(u,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});let j={};try{j=await r.json()}catch(e){}return {ok:r.ok,status:r.status,j:j}}
+let skew=0;/* server clock minus browser clock, from the Date header */
+async function api(m,u,b){const r=await fetch(u,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});try{const d=Date.parse(r.headers.get('Date'));if(d)skew=d/1000-Date.now()/1000}catch(e){}let j={};try{j=await r.json()}catch(e){}return {ok:r.ok,status:r.status,j:j}}
 /* ---- pages ---- */
 $('nav-run').onclick=()=>{$('page-run').hidden=false;$('page-about').hidden=true;$('nav-run').className='on';$('nav-about').className=''};
 $('nav-about').onclick=()=>{$('page-run').hidden=true;$('page-about').hidden=false;$('nav-about').className='on';$('nav-run').className=''};
@@ -126,9 +131,13 @@ $('demoBtn').onclick=async()=>{if(!confirm('Run the pipeline on the example data
 /* ---- jobs ---- */
 $('create').onclick=async()=>{const r=await api('POST','/api/jobs',{name:$('name').value||'job',mode:'discover'});if(r.ok){sel(r.j.id)}else alert(r.j.error)};
 function sel(id){cur=id;$('current').hidden=false;$('jid').textContent=id;$('live').innerHTML='<p class="small">loading&hellip;</p>';refresh();$('current').scrollIntoView()}
-async function loadRows(){const r=await api('GET','/api/jobs');if(!r.ok){$('rows').innerHTML='<tr><td colspan=5>'+esc(r.j.error||'error')+'</td></tr>';return}
+function fmtDur(s){s=Math.max(0,Math.round(s));if(s<60)return s+' s';const m=Math.floor(s/60);if(m<60)return m+' min '+(s%60)+' s';const h=Math.floor(m/60);return h+' h '+(m%60)+' min'}
+function durText(j){if(!j.started)return j.status==='queued'?'waiting':'\u2014';
+ if(j.status==='running')return fmtDur(Date.now()/1000+skew-j.started)+' (running)';
+ return j.finished?fmtDur(j.finished-j.started):'\u2014'}
+async function loadRows(){const r=await api('GET','/api/jobs');if(!r.ok){$('rows').innerHTML='<tr><td colspan=6>'+esc(r.j.error||'error')+'</td></tr>';return}
  let h='';for(const j of r.j){const rep=j.status==='succeeded'?'<a href="/api/jobs/'+j.id+'/files/10_report/report/report.html" target="_blank">report</a>':'';
-  h+='<tr><td><a href="#" data-sel="'+j.id+'">'+j.id+'</a></td><td>'+esc(j.name)+'</td><td class="s-'+j.status+'">'+j.status+'</td><td>'+esc(j.message)+'</td><td>'+rep+'</td></tr>'}
+  h+='<tr><td><a href="#" data-sel="'+j.id+'">'+j.id+'</a></td><td>'+esc(j.name)+'</td><td class="s-'+j.status+'">'+j.status+'</td><td class="dur">'+esc(durText(j))+'</td><td>'+esc(j.message)+'</td><td>'+rep+'</td></tr>'}
  $('rows').innerHTML=h;document.querySelectorAll('[data-sel]').forEach(a=>a.onclick=e=>{e.preventDefault();sel(a.getAttribute('data-sel'))})}
 /* ---- own data: sample table made from the chosen file names (same tag order as conf/input.config) ---- */
 const TAGS=[['_R1_001','_R2_001'],['_R1','_R2'],['.R1','.R2'],['_1','_2']];
@@ -190,5 +199,8 @@ async function refresh(){await loadRows();if(!cur)return;const r=await api('GET'
  $('log').textContent=(d.log_tail||[]).join('\n')||'(no log yet)';
  if(tab==='summary')showSummary();else if(tab==='figures')showFigures()}
 async function live(){if(!cur)return;try{const r=await fetch('/api/jobs/'+cur+'/live.html',{cache:'no-store'});if(r.ok)$('live').innerHTML=await r.text()}catch(e){}}
+function applyTheme(t){document.documentElement.setAttribute('data-theme',t);$('theme').textContent=t==='dark'?'Day mode':'Night mode'}
+(function(){let t=null;try{t=localStorage.getItem('theme')}catch(e){}if(t!=='light'&&t!=='dark')t=(window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches)?'dark':'light';applyTheme(t)})();
+$('theme').onclick=()=>{const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';applyTheme(t);try{localStorage.setItem('theme',t)}catch(e){}};
 loadDemo();setInterval(refresh,5000);setInterval(live,2000);refresh();
 </script></main></body></html>
