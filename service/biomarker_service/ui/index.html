@@ -3,16 +3,16 @@
 <title>Biomarker pipeline</title>
 <script>try{var __t=localStorage.getItem('theme');if(__t==='light'||__t==='dark')document.documentElement.setAttribute('data-theme',__t)}catch(e){}</script>
 <style>
-:root{color-scheme:light;--bg:#f4f6fa;--fg:#1c2330;--card:#fff;--line:#d9dee7;--accent:#1f5fbf;--accent2:#0e8f6b;--warn:#a86a00;--bad:#b3261e;--ok:#1b6e3c;--mute:#8a93a3;--box:#eef1f6}
-@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}}
-:root[data-theme=dark]{color-scheme:dark;--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}
+:root{color-scheme:light;--nbg:#fff3cd;--nfg:#5c4400;--nbd:#e6cf7a;--bg:#f4f6fa;--fg:#1c2330;--card:#fff;--line:#d9dee7;--accent:#1f5fbf;--accent2:#0e8f6b;--warn:#a86a00;--bad:#b3261e;--ok:#1b6e3c;--mute:#8a93a3;--box:#eef1f6}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--nbg:#3a3115;--nfg:#f1dca0;--nbd:#6b5a1e;--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}}
+:root[data-theme=dark]{color-scheme:dark;--nbg:#3a3115;--nfg:#f1dca0;--nbd:#6b5a1e;--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}
 .themebtn{position:absolute;right:0;top:0;background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.4);margin:0}.themebtn:hover{background:rgba(255,255,255,.26)}header .in{position:relative}
 button:disabled{opacity:.5;cursor:default}td.dur{white-space:nowrap}
 *{box-sizing:border-box}body{font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg);margin:0}
 header{background:linear-gradient(120deg,#16396e,#0e6b66);color:#fff;padding:18px 16px}
 header .in{max-width:1100px;margin:0 auto}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.9;font-size:14px}
 main{max-width:1100px;margin:0 auto;padding:16px}
-.notice{background:#fff3cd;color:#5c4400;border:1px solid #e6cf7a;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:14px}
+.notice{background:var(--nbg);color:var(--nfg);border:1px solid var(--nbd);border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:14px}
 .nav{display:flex;gap:6px;margin-bottom:14px}.nav button{background:var(--card);color:var(--fg);border:1px solid var(--line);padding:8px 16px;border-radius:8px}.nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
 .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
 .hero{border:2px solid var(--accent2)}h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:14px 0 6px}
