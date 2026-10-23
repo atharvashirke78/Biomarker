@@ -79,7 +79,7 @@ flowchart LR
 | QC | `sample_qc`, DESeq2 vst, MultiQC 1.35; strandedness cross-check (RSeQC 5.0.6 `infer_experiment.py` against the Salmon library type, flag only, `run_strand_check`); RNA-quality metrics (exonic/intronic share, duplication, TIN, 3'/5' coverage, rRNA and mitochondrial share) as cohort-relative flags, never gates (`run_rnaqc`) | see section 5 | `05_cohort_qc/` (incl. `strandedness_check.tsv`, `rna_qc_metrics.tsv`), `08_multiqc/` |
 | Differential expression | DESeq2 1.50.2, apeglm | design `~ batch + group` (or `~ group`), adjusted p < 0.05, \|log2FC\| >= 1 | `06_dge/` |
 | Pathways | clusterProfiler 4.18.4, fgsea 1.36.2 | GO BP, Hallmark; gene sets 10 to 500 genes | `07_pathway/` |
-| Candidate rules and model | `candidate_rules.R`, glmnet 4.1.10 (LASSO); opt-in fully nested internal estimate with label-permutation null (`run_nested_validation`, rules 1-2 only, report-only, see `docs/NESTED_VALIDATION_DESIGN.md`) | leave-one-out robustness rule 3b, see section 6 | `09_discover/` |
+| Candidate rules and model | `candidate_rules.R`, glmnet 4.1.10 (LASSO); opt-in fully nested internal estimate with label-permutation null (`run_nested_validation`, rules 1-2 only, report-only, see `docs/NESTED_VALIDATION_DESIGN.md`; result on the 19 development samples: `docs/NESTED_VALIDATION_RESULT_19dev.md`) | leave-one-out robustness rule 3b, see section 6 | `09_discover/` |
 | Locked scoring | `scripts/apply_locked_model.R` | no tuning, hash-checked lock files | `09_locked_model/` |
 | Report | `scripts/make_report.py` | cohort-aware banner; stage list, methods and versions, limitations; shows `09_discover/04_validation/` only if that folder exists (written by a separate step; not part of the tested release) | `10_report/` |
 

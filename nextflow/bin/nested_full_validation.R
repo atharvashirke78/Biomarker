@@ -27,7 +27,7 @@ for (i in seq(1, length(a), by = 2)) { if (!grepl("^--", a[i])) usage_error(past
 for (k in c("counts", "sheet", "questions", "rules")) if (is.null(opt[[k]])) usage_error(paste0("missing --", k))
 int_opt <- function(nm, def, lo) { v <- if (is.null(opt[[nm]])) def else suppressWarnings(as.integer(opt[[nm]])); if (is.na(v) || v < lo) usage_error(sprintf("--%s must be an integer >= %d", nm, lo)); v }
 KO <- int_opt("outer-folds", 5L, 2L); NREP <- int_opt("repeats", 5L, 1L); NPERM <- int_opt("permutations", 20L, 0L); SEED <- int_opt("seed", 1000L, 0L)
-PREP <- int_opt("perm-repeats", NREP, 1L); CORES_REQ <- int_opt("cores", 2L, 1L); CORES <- min(CORES_REQ, 4L)
+PREP <- int_opt("perm-repeats", NREP, 1L); CORES_REQ <- int_opt("cores", 2L, 1L); MAXC <- suppressWarnings(as.integer(Sys.getenv("NESTED_MAX_CORES", "4"))); if (is.na(MAXC) || MAXC < 1L) MAXC <- 4L; CORES <- min(CORES_REQ, MAXC)   # cap 4 on a shared pod; raise it with NESTED_MAX_CORES on an idle one
 bool_opt <- function(nm) { v <- tolower(if (is.null(opt[[nm]])) "false" else opt[[nm]]); if (!v %in% c("true", "false")) usage_error(paste0("--", nm, " must be true or false")); v == "true" }
 PLC <- if (is.null(opt[["patient-level-cv"]])) TRUE else bool_opt("patient-level-cv"); KEEP <- bool_opt("keep-work"); OUTSIDE <- bool_opt("screen-outside"); CHECK <- bool_opt("check-only")
 STAGE <- if (is.null(opt$stage)) "all" else opt$stage; if (!STAGE %in% c("all", "screen", "model")) usage_error("--stage must be all, screen or model")
@@ -282,7 +282,7 @@ chk <- tryCatch({
   list(S = S, pl = pl) }, error = function(e) e)
 if (inherits(chk, "error")) { if (CHECK) { cat("CHECK FAILED:", conditionMessage(chk), "\n"); quit(save = "no", status = 1) }; not_run(conditionMessage(chk)) }
 nt <- length(chk$pl$tasks); nsk <- sum(vapply(chk$pl$tasks, function(t) t$skip != "", TRUE))
-if (CORES_REQ > 4L) cat(sprintf("NOTE: --cores %d reduced to 4 (shared pod)\n", CORES_REQ))
+if (CORES_REQ > MAXC) cat(sprintf("NOTE: --cores %d reduced to %d (NESTED_MAX_CORES; shared pod)\n", CORES_REQ, MAXC))
 cat(sprintf("plan: %d samples, %d outer folds x %d repeats, %d permutations x %d repeats; %d tasks, %d skipped by the plan, %d DESeq2 fits; cores %d%s\n", chk$S$N, KO, NREP, NPERM, PREP, nt, nsk, if (OUTSIDE) 1L else nt - nsk, CORES, if (OUTSIDE) " (comparator: screen once on all samples)" else ""))
 if (CHECK) { cat("CHECK OK: inputs readable, both Rscript environments have their packages\n"); quit(save = "no", status = 0) }
 passthru <- unlist(lapply(setdiff(names(opt), c("stage", "cores")), function(n) c(paste0("--", n), opt[[n]])))
