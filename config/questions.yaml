@@ -1,0 +1,53 @@
+# Per-question settings for -entry DISCOVER (added 2026-10-15, Phase 1). NOT part of the lock: lock/diagnostic_v1/sha256sums_final.txt hashes only
+# config/candidate_rules.yaml and config/reference_genes.yaml, which are read here but never edited. Flat "key: value" lines (read by simple parsers).
+# Values marked PROVISIONAL have no external source; every DISCOVER report prints them as PROVISIONAL.
+
+# ---- question status
+diagnostic_status: implemented
+prognostic_status: not_implemented           # Phase 2; DISCOVER stops with an error if requested
+predictive_status: not_implemented           # Phase 2; DISCOVER stops with an error if requested
+
+# ---- input checks (the numbers live in conf/thresholds.config; repeated here only as pointers)
+# analysis_min_samples_per_group = 3  -> conf/thresholds.config:31   PROVISIONAL (no source)
+# analysis_max_unmapped_gene_pct = 5  -> conf/thresholds.config:32   PROVISIONAL (no source)
+
+# ---- diagnostic: candidate rules (values from config/candidate_rules.yaml; nothing re-typed here)
+# Single-route input (no counts_matrix_secondary): rules that need BOTH quantification routes cannot be applied as defined.
+#   rule 2  (baseMean >= 20 on BOTH routes)               -> applied to the single route only (MODIFIED)
+#   rule 3a (rule 1 on both routes, same direction)        -> SKIPPED
+# Results from single-route input are NOT equivalent to the 19-sample method (which used both routes) and every report says so.
+single_route_rule2: applied_to_single_route
+single_route_rule3a: skipped
+
+# ---- diagnostic: rule 3b robustness
+# loo       = leave-one-out over samples (the locked 19-sample method; one DESeq2 refit per sample)
+# subsample = robustness_subsamples refits on robustness_subsample_fraction of PATIENTS (for large cohorts)
+# Pass threshold: ceil(robustness_min_fraction x number of refits). 0.90 is the stated intent of the locked rule
+# ("at least 90%", config/candidate_rules.yaml:32 comment); ceil(0.90 x 19) = 18 = the locked loo_min_pass, checked in code.
+robustness_method: loo
+robustness_min_fraction: 0.90
+robustness_loo_max_samples: 60               # PROVISIONAL (compute limit, no source): above this, robustness_method must be subsample
+robustness_subsamples: 20                    # PROVISIONAL (no source)
+robustness_subsample_fraction: 0.80          # PROVISIONAL (no source)
+robustness_seed: 42
+
+# ---- diagnostic: model (same settings as lock/diagnostic_v1/final_model_spec.txt)
+lasso_seed: 42                               # cv.glmnet foldid seed
+cutoff_seed: 43                              # inner-fold Youden cutoff seed
+cv_folds: 5                                  # K; folds stratified by group x batch
+
+# ---- prognostic (Phase 2; not implemented)
+prognostic_min_events: 20                    # PROVISIONAL (no source)
+prognostic_cox_screen_q: 0.10                # PROVISIONAL (no source)
+
+# ---- diagnostic: rule 3a mode (added 2026-10-22, upgrade H1c/A1; OPT-IN, the default reproduces the locked rule exactly)
+# strict      = rule 1 on BOTH routes, same direction (config/candidate_rules.yaml; the 19-sample method)
+# concordance = featureCounts (primary route) must pass rule 1; Salmon must have the same direction and padj < rule3a_salmon_padj_max and
+#               |apeglm-shrunk log2FC| >= rule3a_salmon_min_abs_lfc. Not the locked rule: results are not equivalent to the 19-sample method; every run prints a WARNING.
+# The two Salmon criteria below are PROVISIONAL (no source; owner decision). Ignored in strict mode and for single-route input.
+rule3a_mode: strict
+rule3a_salmon_padj_max: 0.1                  # PROVISIONAL (no source)
+rule3a_salmon_min_abs_lfc: 0.5               # PROVISIONAL (no source)
+# salmon_borderline column of candidate_table.tsv (flag only, never changes a call): Salmon padj within +-margin of the rule-1 padj cutoff, or |shrunk log2FC| within +-margin of the rule-1 cutoff
+rule3a_borderline_padj_margin: 0.01          # PROVISIONAL (no source)
+rule3a_borderline_lfc_margin: 0.1            # PROVISIONAL (no source)

@@ -1,0 +1,10 @@
+335628bbf497dee2  modules/deseq2.nf
+25f32ad2acb68272  modules/fastp.nf
+c669b04546347243  modules/fastqc.nf
+994edc2166938c9b  modules/featurecounts.nf
+363572cd9c1dadbc  modules/multiqc.nf
+959c213c8d9d1574  modules/salmon.nf
+efd78f747383e675  modules/star.nf
+75ee33c91142b73b  modules/subsample.nf
+4fa7d0b20e18fb73  nextflow/bin/deseq2.R
+7c57671dd03f2f49  nextflow/bin/tximport.R

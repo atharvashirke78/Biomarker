@@ -1,0 +1,9 @@
+name: r_classifier
+channels:
+  - conda-forge
+dependencies:
+  - r-base=4.5.3
+  - r-glmnet=4.1_10
+  - r-proc=1.19.1
+# r-survival 3.8_12 comes as a dependency of glmnet. Created 2026-10-13 under env/prefix/r_classifier with
+# CONDA_PKGS_DIRS=/workspace/Biomarker_pipeline/env/mamba/pkgs; exact build/URL/md5 list: env/r_classifier.lock.txt

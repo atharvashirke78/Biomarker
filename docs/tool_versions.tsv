@@ -1,0 +1,34 @@
+tool	version_reported_by_tool	how_installed
+micromamba	2.9.0	static binary env/bin
+java	openjdk version "17.0.18-internal" 2026-01-20	micromamba env nf (conda-forge)
+nextflow	      N E X T F L O W	micromamba env nf (bioconda)
+fastp	fastp 1.4.0	env/prefix/fastp from env/fastp.yml
+fastqc	FastQC v0.13.0	env/prefix/fastqc from env/fastqc.yml (openjdk 25.0.2 from the same env)
+multiqc	multiqc, version 1.35	env/prefix/multiqc from env/multiqc.yml (pip multiqc==1.35 inside python 3.12 env)
+samtools	samtools 1.24	env/prefix/samtools from env/samtools.yml
+STAR	2.7.11b	env/prefix/star from env/star.yml
+featureCounts	featureCounts v2.1.1	env/prefix/subread from env/subread.yml
+salmon	salmon 1.10.3	env/prefix/salmon from env/salmon.yml
+python	Python 3.12.15	env/prefix/pyqc from env/pyqc.yml
+pandas	2.3.3	env/prefix/pyqc
+R	R version 4.5.3 (2026-03-11)	env/prefix/r_dge from env/r_dge.yml
+R:DESeq2	1.50.2	env/prefix/r_dge
+R:tximport	1.38.2	env/prefix/r_dge
+R:apeglm	1.32.0	env/prefix/r_dge
+R:ggplot2	4.0.3	env/prefix/r_dge
+R:pheatmap	1.0.13	env/prefix/r_dge
+R:ggrepel	0.9.8	env/prefix/r_dge
+R:jsonlite	2.0.0	env/prefix/r_dge
+R:readr	2.2.0	env/prefix/r_dge
+R	R version 4.5.3 (2026-03-11)	env/prefix/r_pathway from env/r_pathway.yml
+R:clusterProfiler	4.18.4	env/prefix/r_pathway
+R:fgsea	1.36.2	env/prefix/r_pathway
+R:msigdbr	26.1.1	env/prefix/r_pathway
+R:org.Hs.eg.db	3.22.0	env/prefix/r_pathway
+R:enrichplot	1.30.5	env/prefix/r_pathway
+R:ggplot2	4.0.3	env/prefix/r_pathway
+GENCODE annotation	release 50 (v50), GRCh38.p14, Ensembl 116 (from GTF header)	ref/ (md5 checked against release MD5SUMS)
+nextflow	24.10.5 build 5935	env/mamba/envs/nf (recorded 2026-10-13)
+R:glmnet	4.1.10	env/prefix/r_classifier (conda-forge r-glmnet 4.1_10; docs/code_sources.md:23; added 2026-10-15, checked with packageVersion)
+R:pROC	1.19.1	env/prefix/r_classifier (added 2026-10-15, read with packageVersion("pROC") from the installed env)
+R:BiocParallel	1.44.0	env/prefix/r_pathway (added 2026-10-15, read with packageVersion("BiocParallel") from the installed env)

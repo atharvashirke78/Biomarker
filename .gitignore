@@ -1,0 +1,55 @@
+# run outputs, work dirs, data, runtime state: never versioned
+results/
+results_*/
+work/
+work_*/
+.nextflow/
+.nextflow.bak*/
+.nextflow.log*
+data/
+data_public/
+test_data/
+logs/
+tmp/
+ref/
+validation_run/data/
+validation_run/env
+validation_run/ref
+validation_run/work*/
+# installed environments and binaries (definitions env/*.yml and docs/env_lock/ ARE versioned)
+env/prefix/
+env/mamba/
+env/bin/
+env/nf_conda/
+# large / binary files
+*.fastq.gz
+*.fq.gz
+*.bam
+*.bai
+*.cram
+*.fa
+*.fasta
+*.gtf.gz
+*.rds
+*.tar.gz
+*.tgz
+*.so
+*.xlsx
+*.html
+!service/biomarker_service/ui/index.html
+__pycache__/
+
+# scratch / backups (files stay on disk; already-tracked ones stay tracked)
+env/msigdbr_cache/
+*.pending
+*.bak_*
+
+# example input folder built by examples/make_example_input.sh (the script is tracked, the data is not)
+examples/example_input/
+
+# launch leftovers and stray backups
+result/
+*.bak
+*.zip
+run*.log
+.input_scan_*/

@@ -1,0 +1,48 @@
+# Candidate biomarker selection rules (19-sample diagnostic set, tumour vs normal).
+# Status: APPROVED by the owner for rules 1-3 (Step B approval). Rule 4 and the classifier remain PLACEHOLDER:
+# their pass numbers are fixed and committed BEFORE the 15 validation samples are touched.
+version: 1.0
+key: gene_id            # versioned Ensembl gene_id; gene symbol is a label only (PDE4C = two IDs)
+keep_biotype_column: true               # column gene_biotype, kept for all genes
+restrict_to_protein_coding: false       # DECIDED: do not restrict now; decide at the final-panel stage
+routes: [featurecounts, salmon_tximport]
+design: "~ study + group"               # reference group: normal
+rule1_significance:
+  status: DECIDED
+  padj_max: 0.05
+  abs_shrunk_log2fc_min: 1.0            # apeglm-shrunk log2FoldChange_shrunk
+  candidate_universe: rule 1 passed on featureCounts OR Salmon (one row per gene_id in the candidate table)
+rule2_measurable:
+  status: DECIDED
+  basemean_min: 20                      # on both routes
+  stricter_tier:
+    column: baseMean_ge_50_both         # TRUE/FALSE, reported only, NOT a filter; stricter tier for the final panel
+    basemean_min: 50
+rule3_robust:
+  a_both_routes:
+    status: DECIDED
+    same_direction: true
+    rule1_pass_on_both_routes: true
+  b_leave_one_out:
+    status: DECIDED
+    route: featurecounts                # featureCounts only
+    runs: 19                            # drop one of the 19 samples each time
+    same_call_as_main_run: true         # ~ study + group, pre-filter >= 10 counts in >= n samples (n = smallest group of the full 19 cohort = 9, fixed for all 19 refits), results(alpha = 0.05), lfcShrink apeglm. alpha, count and n are read from conf/thresholds.config (de_padj, de_min_count, de_min_samples), not from here. CHANGED in rc1-prep (was pre-filter 5, default alpha 0.1)
+    stable_if: rule 1 holds, in the same direction as the 19-sample run, in at least loo_min_pass (18) of 19 refits
+    loo_min_pass: 18                    # PARAMETER read by candidate_selection.R. DECIDED 2026-10-14: 18 of 19 (= 0.947), because the rule is "at least 90%" and 17/19 = 0.895 is below 90%. Was 17.
+    record: [loo_fraction, loo_failed_samples]   # fraction of refits passing; which sample removals broke the gene
+rule4_independent_reproduction:         # LOCKED 2026-10-14 (lock-diagnostic-v1); applied once to the 15 independent samples, reported, no pass or fail threshold
+  status: LOCKED
+  definition: a candidate gene (of the 1,390 final candidates) is "reproduced" if, in the 15 independent samples, it has the same direction as in the 19 development samples (sign of the shrunk log2FC in both) AND padj < 0.05 in a DESeq2 run using the same model as the 19-sample run
+  model: ~ study + group if more than one study is present in the 15 samples, ~ group otherwise; same pre-filter rule (>= 10 counts in >= n samples, n = smallest group size); alpha = de_padj
+  report: number and percentage of the 1,390 candidates reproduced
+  pass_threshold: none (reported only)
+classifier_test:                        # LOCKED 2026-10-14 (lock-diagnostic-v1; owner decisions); committed before the 15 samples are touched
+  status: LOCKED
+  primary_method: balanced_updown_score_log2CPM   # Arm 4 design; genes = LASSO (glmnet, lambda.1se, seed 42) on the 19 development samples, candidate features = the 1,390 final candidates; model files final_model_genes.tsv + final_model_spec.txt
+  cutoff: inner 5-fold CV on the 19 development samples (stratified by group x study; Youden J per inner fold; median of the fold cutoffs), seeds 42 (LASSO folds) and 43 (cutoff folds), fixed in final_model_spec.txt
+  secondary_method: reference_gene_score        # Arm 3 design, reported for comparison only, not part of the pass test
+  pass_rule_15_samples: at most 1 classification error per class (tumour, normal), and the same within each study if both studies are present
+  auc: reported with its confidence interval, NOT the pass test; confidence intervals will be wide because the test set is small
+  sample_qc_exclusion: a sample that fails the existing QC flags (sample_qc status FAIL: STAR unique < 50 % or Salmon mapped < 50 %, conf/thresholds.config qc_star_fail, qc_salmon_fail) is excluded automatically and REPORTED with its reason; WARN samples are kept and reported; the cohort outlier flag (MAD) is flag-only. No sample is ever excluded or kept by manual choice.
+  frozen_after_test: [gene list, signs, cutoff, reference-gene list, baseMean filter, equivalence margins, QC-exclusion rule]; a failure is reported, not adjusted

@@ -1,0 +1,39 @@
+kind	path	value
+source	validation_run/samplesheets/validation_15.csv	14a0bfb9a6378c7fc91269aefc9eafc9b65e8a3df5e6b993cf92aa2402b47893
+source	results/10_independent_validation/SRP245232/metadata/ena_filereport.tsv	e15ba8f8f7d60eb2cdae75fd316b7852d6644bafe16d64f6188b03db90b8564c
+source	results/10_independent_validation/SRP344867/metadata/ena_filereport.tsv	f350a64c6073a4fba756e6e34f50affd78d6c19e526a9270325efcc0de98666f
+output	validation_run/input_15_20261016/metadata.csv	577725a487aee2d02f027dad75051d441b33d65808e3f3a789a9bd159418c26a
+symlink	SRR16832113_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832113_R1.fastq.gz
+symlink	SRR16832113_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832113_R2.fastq.gz
+symlink	SRR16832116_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832116_R1.fastq.gz
+symlink	SRR16832116_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832116_R2.fastq.gz
+symlink	SRR16832142_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832142_R1.fastq.gz
+symlink	SRR16832142_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832142_R2.fastq.gz
+symlink	SRR16832114_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832114_R1.fastq.gz
+symlink	SRR16832114_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832114_R2.fastq.gz
+symlink	SRR16832118_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832118_R1.fastq.gz
+symlink	SRR16832118_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832118_R2.fastq.gz
+symlink	SRR16832119_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832119_R1.fastq.gz
+symlink	SRR16832119_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832119_R2.fastq.gz
+symlink	SRR16832130_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832130_R1.fastq.gz
+symlink	SRR16832130_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832130_R2.fastq.gz
+symlink	SRR16832115_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832115_R1.fastq.gz
+symlink	SRR16832115_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR16832115_R2.fastq.gz
+symlink	SRR16832141_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832141_R1.fastq.gz
+symlink	SRR16832141_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR16832141_R2.fastq.gz
+symlink	SRR10967902_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR10967902_R1.fastq.gz
+symlink	SRR10967902_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR10967902_R2.fastq.gz
+symlink	SRR10967903_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR10967903_R1.fastq.gz
+symlink	SRR10967903_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR10967903_R2.fastq.gz
+symlink	SRR10967906_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR10967906_R1.fastq.gz
+symlink	SRR10967906_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR10967906_R2.fastq.gz
+symlink	SRR10967908_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR10967908_R1.fastq.gz
+symlink	SRR10967908_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR10967908_R2.fastq.gz
+symlink	SRR10967909_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR10967909_R1.fastq.gz
+symlink	SRR10967909_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/tumor_sample/SRR10967909_R2.fastq.gz
+symlink	SRR10967905_R1.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR10967905_R1.fastq.gz
+symlink	SRR10967905_R2.fastq.gz	/workspace/Biomarker_pipeline/validation_run/data/normal_sample/SRR10967905_R2.fastq.gz
+rule	sample_id	run accession from the list (sample == run checked)
+rule	group	list column 'group' as written
+rule	batch_or_study	list column 'study'
+rule	patient_id	SRP344867: ENA sample_alias minus final A/B; SRP245232: ENA sample_title minus final N/T

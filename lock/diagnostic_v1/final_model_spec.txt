@@ -1,0 +1,10 @@
+# DRAFT final primary model (not locked). Balanced up/down score, Arm 4 design.
+model: balanced_updown_score_log2CPM
+score(sample) = mean(log2(CPM + 1) over the UP genes) - mean(log2(CPM + 1) over the DOWN genes); CPM = featureCounts count / sample's featureCounts assigned total * 1e6
+call tumour if score > cutoff (strictly greater); normal otherwise
+n_up = 8, n_down = 1 (genes and signs in final_model_genes.tsv)
+cutoff = 1.352325902   (median of the 5 inner-fold Youden cutoffs: 1.35233, 1.2408, 1.35233, 1.35233, 1.35233)
+seed = 42 (LASSO CV folds) and 43 (inner cutoff folds); K = 5; folds stratified by group x study
+lasso: glmnet binomial alpha = 1, lambda.1se = 0.0095792166 (cv.glmnet deviance), candidate features = the 1,390 final candidates (rules 1, 2, 3a, 3b at 18 of 19; 1390 genes in the matrix)
+training samples: the 19 development samples (results/04_counts/counts_featurecounts.tsv); the 15 validation samples were not used
+reference for comparison only (not the lock cutoff): in-sample Youden cutoff = 1.352325902

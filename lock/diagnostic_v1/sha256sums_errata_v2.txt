@@ -1,0 +1,1 @@
+bdb4f1bf30906b8e752af1264286435be4ebcec3357535711d6d464908b26e0d  lock/diagnostic_v1/ERRATA.md

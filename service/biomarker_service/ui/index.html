@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Biomarker pipeline</title>
+<style>
+:root{--bg:#f4f6fa;--fg:#1c2330;--card:#fff;--line:#d9dee7;--accent:#1f5fbf;--accent2:#0e8f6b;--warn:#a86a00;--bad:#b3261e;--ok:#1b6e3c;--mute:#8a93a3;--box:#eef1f6}
+@media (prefers-color-scheme:dark){:root{--bg:#10141b;--fg:#e6e9ef;--card:#181e28;--line:#2c3544;--accent:#6ea8fe;--accent2:#5fd4a8;--warn:#e0b050;--bad:#ff8a80;--ok:#7bd88f;--mute:#7d8798;--box:#222a37}}
+*{box-sizing:border-box}body{font:15px/1.5 system-ui,sans-serif;background:var(--bg);color:var(--fg);margin:0}
+header{background:linear-gradient(120deg,#16396e,#0e6b66);color:#fff;padding:18px 16px}
+header .in{max-width:1100px;margin:0 auto}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.9;font-size:14px}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.notice{background:#fff3cd;color:#5c4400;border:1px solid #e6cf7a;border-radius:6px;padding:8px 12px;margin-bottom:14px;font-size:14px}
+.nav{display:flex;gap:6px;margin-bottom:14px}.nav button{background:var(--card);color:var(--fg);border:1px solid var(--line);padding:8px 16px;border-radius:8px}.nav button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+.hero{border:2px solid var(--accent2)}h2{font-size:17px;margin:0 0 8px}h3{font-size:14px;margin:14px 0 6px}
+button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;margin:2px;font-size:14px}
+button.big{background:var(--accent2);font-size:16px;padding:12px 22px}button.sec{background:transparent;color:var(--accent);border:1px solid var(--accent)}button.bad{background:var(--bad)}button:disabled{opacity:.5;cursor:default}
+input[type=text],select{padding:6px;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--fg)}
+table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;font-size:13px;vertical-align:top}
+.s-succeeded{color:var(--ok)}.s-failed,.s-invalid{color:var(--bad)}.s-running,.s-queued{color:var(--warn)}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px;overflow:auto;max-height:280px;font-size:12px;white-space:pre-wrap}
+.small{font-size:12px;opacity:.85}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:800px){.two{grid-template-columns:1fr}}
+.tabs{margin-top:10px}.tabs button{background:transparent;color:var(--fg);border:1px solid var(--line)}.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+figure{margin:0;border:1px solid var(--line);border-radius:6px;padding:6px;background:var(--card)}figure img{width:100%;height:auto;display:block}figcaption{font-size:12px;margin-top:4px}
+.kpi{display:flex;flex-wrap:wrap;gap:10px}.kpi div{background:var(--box);border-radius:6px;padding:8px 12px;min-width:110px}.kpi b{display:block;font-size:20px}
+/* live view (HTML/SVG comes from the server) */
+.liveHead{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}.pct{flex:1;min-width:260px}
+.pbar{height:12px;background:var(--box);border-radius:6px;overflow:hidden;margin-bottom:4px}.pbar span{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .6s}
+.now{background:var(--box);border-radius:8px;padding:8px 12px;margin:8px 0;font-size:14px}
+svg text{font:12px system-ui,sans-serif;fill:var(--fg)}.edge{stroke:#8a93a3;stroke-width:1.5}
+.edge.flow{stroke:var(--warn);stroke-width:2.5;stroke-dasharray:6 4;animation:dash .7s linear infinite}@keyframes dash{to{stroke-dashoffset:-10}}
+.st-pending rect.box{fill:var(--box);stroke:var(--line)}.st-running rect.box{fill:var(--box);stroke:var(--warn);stroke-width:2;animation:pulse 1.3s ease-in-out infinite}
+@keyframes pulse{50%{stroke-width:4.5}}.st-done rect.box{fill:var(--box);stroke:var(--ok);stroke-width:2}.st-failed rect.box{fill:var(--box);stroke:var(--bad);stroke-width:2}
+.st-pending text.sub{fill:var(--mute)}.st-running text.sub{fill:var(--warn)}.st-done text.sub{fill:var(--ok)}.st-failed text.sub{fill:var(--bad)}
+rect.bar{fill:var(--warn)}.st-done rect.bar{fill:var(--ok)}
+.matrix td,.matrix th{text-align:center;padding:4px 8px}.matrix td:first-child,.matrix td:nth-child(2){text-align:left}
+.c-done{background:rgba(27,110,60,.22);color:var(--ok);font-weight:700}.c-running{background:rgba(168,106,0,.25);color:var(--warn);animation:blink 1s ease-in-out infinite}@keyframes blink{50%{opacity:.45}}
+.c-failed{background:rgba(179,38,30,.25);color:var(--bad)}.c-pending{color:var(--mute)}.q-PASS{color:var(--ok);font-weight:700}.q-WARN{color:var(--warn);font-weight:700}.q-FAIL{color:var(--bad);font-weight:700}
+.pill{border-radius:10px;padding:1px 8px;font-size:11px;background:var(--box)}.p-running{background:var(--warn);color:#fff}.p-done{background:var(--ok);color:#fff}.p-failed{background:var(--bad);color:#fff}
+.gauges{display:grid;gap:6px}.gauge{display:grid;grid-template-columns:190px 1fr 150px;gap:8px;align-items:center;font-size:13px}.gb{height:10px;background:var(--box);border-radius:5px;overflow:hidden}.gb span{display:block;height:100%;background:var(--accent);transition:width .6s}
+.about h3{margin-top:18px}.about li{margin:3px 0}.about .pill{margin-right:4px}
+</style></head><body>
+<header><div class="in"><h1>RNA-seq biomarker discovery pipeline</h1><p>From paired FASTQ files to QC, differential expression, candidate biomarker genes and a report &mdash; in one automated run.</p></div></header>
+<main>
+<div class="notice">Research use only. Results are not clinically validated; candidate biomarkers need independent validation.</div>
+<div class="nav"><button id="nav-run" class="on">Run</button><button id="nav-about">About this pipeline</button></div>
+
+<div id="page-run">
+<div class="card hero"><h2>Try it now: example sample data</h2>
+<div class="two"><div>
+<p>Runs the whole pipeline on <b>real RNA-seq data</b> that is already on this pod: 6 colon samples (3 normal, 3 tumour) from two public studies, the first 100,000 read pairs of each. Watch every step run live below.</p>
+<button id="demoBtn" class="big">Input Example Sample Data</button>
+<p class="small" id="demoNote">loading demo information&hellip;</p></div>
+<div><div id="demoTable" class="small"></div></div></div></div>
+
+<div class="card"><h2>Or use your own data</h2>
+<input type="text" id="name" size="28" placeholder="job name (optional)"> <button id="uploadTop">Upload sample input</button> <button id="uploadFolder" class="sec">Choose a folder</button> <button id="create" class="sec">Create empty job</button>
+<input type="file" id="files" multiple hidden><input type="file" id="folder" webkitdirectory multiple hidden>
+<div class="small" id="chosen"></div>
+<p class="small">Paired-end FASTQ files named <code>sample_R1.fastq.gz</code> + <code>sample_R2.fastq.gz</code> (also <code>_1/_2</code>, <code>.R1/.R2</code>, <code>_R1_001/_R2_001</code>; one style per job; one pair per sample, merge lanes first). Groups are set in the table that appears, or upload your own <code>metadata.csv</code> (columns <code>sample_id,group</code>; optional <code>batch_or_study,patient_id</code>; batch/study values only letters, digits, <code>. _ -</code>). At least 3 samples per group. One job runs at a time; others wait in the queue.</p></div>
+
+<div class="card" id="current" hidden><h2>Job <span id="jid"></span> <span id="jstatus"></span></h2>
+<div id="builder" hidden><h3>Samples found in the chosen files &mdash; set the group of every sample</h3>
+<table><thead><tr><th>Sample</th><th>R1</th><th>R2</th><th>Group</th><th>Batch / study (optional)</th></tr></thead><tbody id="btable"></tbody></table><p class="small" id="bnote"></p></div>
+<div><button id="upload">Upload sample input</button> <button id="validate" class="sec">Validate input</button> <button id="submit">Validate and start</button>
+<button id="cancel" class="sec">Cancel</button> <button id="resume" class="sec">Resume</button> <button id="delete" class="bad">Delete job</button> <a id="exportLink" href="#" hidden><button class="sec" type="button">Download tables (zip)</button></a> <a id="reportLink" href="#" target="_blank" hidden><button class="sec" type="button">Open full report</button></a></div>
+<progress id="up" value="0" max="1" hidden style="width:100%"></progress><div id="upmsg" class="small"></div><pre id="vout" hidden></pre>
+<h3>Live workflow</h3><div id="live"><p class="small">The live view starts when the job runs.</p></div>
+<div class="tabs"><button data-t="summary" class="on">Summary</button><button data-t="figures">Figures</button><button data-t="log">Log</button></div>
+<div id="tab-summary"></div><div id="tab-figures" hidden></div><div id="tab-log" hidden><pre id="log">select a job</pre></div></div>
+
+<div class="card"><h2>Jobs</h2><table><thead><tr><th>Job</th><th>Name</th><th>Status</th><th>Message</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</div>
+
+<div id="page-about" class="card about" hidden>
+<h2>What is this pipeline?</h2>
+<p>An automated RNA-seq workflow. You give it paired-end FASTQ files from <b>two groups</b> (for example tumour and normal tissue) plus a small table saying which sample belongs to which group. In one run it checks the input, measures gene expression, finds the genes that differ between the groups, applies pre-set rules to keep only robust <b>candidate biomarker genes</b>, and, when there are enough samples, builds a small gene score with a cutoff. Everything ends in one report.</p>
+<h3>What is it used for?</h3>
+<ul><li><span class="pill">discovery</span>Generating <b>hypotheses</b> about diagnostic biomarker genes in a development cohort (tumour vs normal, case vs control).</li>
+<li><span class="pill">standardised</span>Processing RNA-seq cohorts the same way every time (same tools, versions, thresholds and seeds), with a manifest of what ran.</li>
+<li><span class="pill">QC</span>Screening RNA-seq samples: mapping rates, read quality, outliers, and failed samples are flagged automatically.</li>
+<li><span class="pill">exploration</span>A quick overview of differential expression and pathways for a new cohort.</li>
+<li><span class="pill">teaching</span>Showing how a full RNA-seq analysis fits together, step by step (the demo above).</li></ul>
+<h3>Typical use cases</h3>
+<ul><li>A lab has FASTQ files from 10&ndash;60 tumour and normal samples and wants QC, differential expression and a first candidate gene list.</li>
+<li>A team re-analyses a public cohort with a fixed, documented workflow.</li>
+<li>A group checks whether a small cohort is large enough for the full model, and gets a clear message if it is not.</li></ul>
+<h3>What you get</h3>
+<ul><li>A sample QC table (PASS / WARN / FAIL), counts, and cohort QC plots.</li><li>Differential-expression tables, volcano / MA / heatmap, and pathway enrichment (ORA and GSEA).</li>
+<li>A candidate table showing which rules each gene passed, and, when feasible, a model: a small gene panel, its score formula and cutoff, with performance measured on the same samples.</li>
+<li>One HTML report with the methods used, QC findings and limitations.</li></ul>
+<h3>How the steps fit together</h3>
+<p>Each sample is processed on its own (verify, trim, align, count, quantify, QC) and these steps run in parallel as far as memory allows. When all samples are done, the group-level steps run on all samples together (merge, cohort QC, differential expression, pathways, candidate rules, model, report). The live view shows each step and what it does.</p>
+<h3>Limitations &mdash; please read</h3>
+<ul><li><b>Research use only.</b> It is not a diagnostic device, and nothing it produces is clinically validated.</li>
+<li><b>Candidate genes are hypotheses.</b> They need independent validation on samples that were not used to find them. The performance shown for the model is computed on the same samples that chose the genes and the cutoff, so it is <b>optimistic</b>.</li>
+<li><b>Input limits:</b> human samples only (GRCh38, GENCODE v50); paired-end bulk RNA-seq; exactly two groups; at least 3 samples per group; one pair of files per sample (merge lanes first).</li>
+<li><b>Sample size:</b> the robustness rule needs at least 10 leave-one-out refits, so with fewer than 10 samples no gene panel is produced (the run still gives QC, counts, differential expression and pathways). Above 60 samples the current leave-one-out method is not allowed. A small cohort gives weak and unstable results.</li>
+<li><b>Stability:</b> the gene selection can change with the order of the candidates and the random seed. The Salmon route is not exactly repeatable run to run for some samples.</li>
+<li><b>Design:</b> one batch factor is adjusted for; paired tumour/normal samples from the same patient are not modelled as pairs; no covariates such as age or sex.</li>
+<li><b>Prognostic and predictive analyses</b> (survival, treatment response) are not implemented.</li>
+<li><b>Time and capacity:</b> about 3 hours for 19 full-size samples on 16 CPUs and 64 GB; one job at a time on this pod.</li>
+<li><b>This prototype</b> has no login: it only listens on this machine. Commercial, licensing and regulatory questions have not been cleared.</li></ul>
+<h3>Not for</h3>
+<p>Diagnosing patients or any clinical decision; other species; single-end, long-read or single-cell data; more than two groups.</p>
+<h3>Status</h3>
+<p>The standardised version of the scripts is being validated against an earlier successful 19-sample run. The demo uses real data but is a tool demonstration only.</p>
+</div>
+
+<script>
+let cur=null,tab='summary',sampleRows=[],chosen=[],curEditable=false;const $=id=>document.getElementById(id);
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+async function api(m,u,b){const r=await fetch(u,{method:m,headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});let j={};try{j=await r.json()}catch(e){}return {ok:r.ok,status:r.status,j:j}}
+/* ---- pages ---- */
+$('nav-run').onclick=()=>{$('page-run').hidden=false;$('page-about').hidden=true;$('nav-run').className='on';$('nav-about').className=''};
+$('nav-about').onclick=()=>{$('page-run').hidden=true;$('page-about').hidden=false;$('nav-about').className='on';$('nav-run').className=''};
+/* ---- demo ---- */
+async function loadDemo(){const r=await api('GET','/api/demo');const d=r.j;
+ if(!r.ok||!d.available){$('demoNote').textContent=(d&&d.message)||'demo data not available';$('demoBtn').disabled=true;return}
+ $('demoTable').innerHTML='<table><thead><tr><th>Sample</th><th>Group</th><th>Study</th></tr></thead><tbody>'+d.samples.map(s=>'<tr><td>'+esc(s.sample)+'</td><td>'+esc(s.group)+'</td><td>'+esc(s.study)+'</td></tr>').join('')+'</tbody></table>';
+ $('demoNote').textContent=d.read_pairs_per_sample+' read pairs per sample. Takes about '+d.estimated_minutes+' minutes. A tool demonstration: too small for biology; with fewer than 10 samples the biomarker model is skipped by design.'}
+$('demoBtn').onclick=async()=>{if(!confirm('Run the pipeline on the example data now? It uses this pod for about 10 minutes.'))return;$('demoBtn').disabled=true;
+ const r=await api('POST','/api/demo/start');$('demoBtn').disabled=false;
+ if(!r.ok&&!(r.j&&r.j.job)){alert((r.j&&r.j.error)||'could not start the demo');return}
+ sel(r.j.job.id);if(!r.ok){$('vout').hidden=false;$('vout').textContent=r.j.validation.output}};
+/* ---- jobs ---- */
+$('create').onclick=async()=>{const r=await api('POST','/api/jobs',{name:$('name').value||'job',mode:'discover'});if(r.ok){sel(r.j.id)}else alert(r.j.error)};
+function sel(id){cur=id;$('current').hidden=false;$('jid').textContent=id;$('live').innerHTML='<p class="small">loading&hellip;</p>';refresh();$('current').scrollIntoView()}
+async function loadRows(){const r=await api('GET','/api/jobs');if(!r.ok){$('rows').innerHTML='<tr><td colspan=5>'+esc(r.j.error||'error')+'</td></tr>';return}
+ let h='';for(const j of r.j){const rep=j.status==='succeeded'?'<a href="/api/jobs/'+j.id+'/files/10_report/report/report.html" target="_blank">report</a>':'';
+  h+='<tr><td><a href="#" data-sel="'+j.id+'">'+j.id+'</a></td><td>'+esc(j.name)+'</td><td class="s-'+j.status+'">'+j.status+'</td><td>'+esc(j.message)+'</td><td>'+rep+'</td></tr>'}
+ $('rows').innerHTML=h;document.querySelectorAll('[data-sel]').forEach(a=>a.onclick=e=>{e.preventDefault();sel(a.getAttribute('data-sel'))})}
+/* ---- own data: sample table made from the chosen file names (same tag order as conf/input.config) ---- */
+const TAGS=[['_R1_001','_R2_001'],['_R1','_R2'],['.R1','.R2'],['_1','_2']];
+function parseName(n){const m=n.match(/^(.*)\.(fastq|fq)\.gz$/);if(!m)return null;const s=m[1];
+ for(const t of TAGS){if(s.endsWith(t[0]))return {sid:s.slice(0,-t[0].length),mate:'R1'};if(s.endsWith(t[1]))return {sid:s.slice(0,-t[1].length),mate:'R2'}}return null}
+async function ensureJob(){if(cur&&curEditable)return true;const r=await api('POST','/api/jobs',{name:$('name').value||'job',mode:'discover'});
+ if(!r.ok){alert(r.j.error||'could not create the job');return false}cur=r.j.id;curEditable=true;$('current').hidden=false;$('jid').textContent=cur;return true}
+async function onChosen(list){chosen=list;const hasMeta=chosen.some(f=>f.name==='metadata.csv');const by={};
+ for(const f of chosen){const p=parseName(f.name);if(!p)continue;(by[p.sid]=by[p.sid]||{})[p.mate]=true}
+ const ids=Object.keys(by).sort();
+ $('chosen').textContent=chosen.length?(chosen.length+' file(s) chosen: '+ids.length+' sample(s)'+(hasMeta?', with your metadata.csv':', no metadata.csv (set the groups below)')):'';
+ if(!chosen.length||!(await ensureJob()))return;
+ $('builder').hidden=hasMeta||!ids.length;
+ $('bnote').textContent=hasMeta?'':'A metadata.csv is created from this table when you upload. Files without an R1/R2 partner are reported by the validation.';
+ $('btable').innerHTML=ids.map((s,i)=>'<tr><td>'+esc(s)+'</td><td>'+(by[s].R1?'yes':'<b>missing</b>')+'</td><td>'+(by[s].R2?'yes':'<b>missing</b>')+'</td><td><select data-g="'+i+'"><option value="">choose</option><option>tumour</option><option>normal</option><option>case</option><option>control</option></select></td><td><input type="text" size="12" data-b="'+i+'"></td></tr>').join('');
+ sampleRows=ids;refresh()}
+$('uploadTop').onclick=()=>$('files').click();$('uploadFolder').onclick=()=>$('folder').click();
+$('files').onchange=()=>onChosen([...$('files').files]);
+$('folder').onchange=()=>onChosen([...$('folder').files].filter(f=>f.name==='metadata.csv'||parseName(f.name)));
+function metaCsv(){const rows=['sample_id,group,batch_or_study'];
+ for(let i=0;i<sampleRows.length;i++){const g=document.querySelector('[data-g="'+i+'"]').value;const b=document.querySelector('[data-b="'+i+'"]').value.trim();
+  if(!g)throw new Error('choose a group for sample '+sampleRows[i]);rows.push(sampleRows[i]+','+g+','+b)}return rows.join('\n')+'\n'}
+function put(name,body){return new Promise(res=>{const x=new XMLHttpRequest();x.open('PUT','/api/jobs/'+cur+'/files/'+encodeURIComponent(name));
+ x.upload.onprogress=e=>{$('up').max=e.total||1;$('up').value=e.loaded;$('upmsg').textContent=name};
+ x.onload=()=>{if(x.status!==200)$('upmsg').textContent=name+': '+x.responseText;res(x.status===200)};x.onerror=()=>res(false);x.send(body)})}
+$('upload').onclick=async()=>{if(!cur||!chosen.length)return;let meta=null;
+ if(!$('builder').hidden){try{meta=metaCsv()}catch(e){alert(e.message);return}}
+ $('up').hidden=false;let ok=true;for(const f of chosen){if(!(await put(f.name,f)))ok=false}
+ if(meta!==null&&!(await put('metadata.csv',new Blob([meta],{type:'text/csv'}))))ok=false;
+ $('upmsg').textContent=ok?'upload finished':'some files were not accepted (see above)';refresh()};
+async function act(a){if(!cur)return;const r=await api('POST','/api/jobs/'+cur+'/'+a);const v=r.j;
+ if(a==='validate'||a==='submit'){$('vout').hidden=false;$('vout').textContent=(v.ok&&v.n_samples?'INPUT OK: '+v.n_samples+' samples; groups '+JSON.stringify(v.groups)+'\n\n':(v.ok===false?'INPUT NOT ACCEPTED. Fix the points below, upload again and validate.\n\n':''))+(v.output||v.error||v.message||JSON.stringify(v))+(v.notes&&v.notes.length?'\n\n'+v.notes.join('\n'):'')}
+ else if(!r.ok)alert(v.error||'not possible');refresh()}
+$('validate').onclick=()=>act('validate');$('submit').onclick=()=>act('submit');$('resume').onclick=()=>act('resume');
+$('cancel').onclick=()=>{if(cur&&confirm('Cancel this job?'))act('cancel')};
+$('delete').onclick=async()=>{if(cur&&confirm('Delete this job with its uploads and results? This cannot be undone.')){const r=await api('DELETE','/api/jobs/'+cur+'?confirm=yes');if(!r.ok)alert(r.j.error);else{cur=null;$('current').hidden=true}loadRows()}};
+/* ---- summary and figures (JSON from the server) ---- */
+function table(rows,cols){if(!rows||!rows.length)return '<p class="small">none</p>';return '<table><thead><tr>'+cols.map(c=>'<th>'+esc(c[1])+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+cols.map(c=>'<td>'+esc(r[c[0]])+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
+async function showSummary(){const r=await api('GET','/api/jobs/'+cur+'/summary');if(!r.ok){$('tab-summary').innerHTML='';return}const s=r.j.summary;let h='';
+ if(s.qc){h+='<h3>Sample QC</h3><div class="kpi"><div><b>'+s.qc.n_samples+'</b>samples</div>'+Object.keys(s.qc.counts).map(k=>'<div><b>'+s.qc.counts[k]+'</b>'+esc(k)+'</div>').join('')+'</div>'+(s.qc.flagged.length?table(s.qc.flagged,[['sample','Sample'],['group','Group'],['status','Status'],['reason','Reason']]):'')}
+ if(s.funnel)h+='<h3>Candidate funnel</h3>'+table(s.funnel,[['step','Step'],['all_genes','All genes'],['protein_coding','Protein coding']]);
+ if(s.candidates)h+='<h3>Candidates that passed all rules: '+s.candidates.n_pass_all_rules+'</h3>'+table(s.candidates.top,[['symbol','Gene'],['gene_id','Gene ID'],['log2fc_shrunk','log2FC (shrunk)'],['padj','padj'],['loo_passes','Leave-one-out passes']]);
+ if(s.model){h+='<h3>Model</h3>';if(s.model.fitted)h+='<p>Cutoff <b>'+esc(s.model.cutoff)+'</b> (a sample is called case/tumour when its score is strictly above the cutoff).</p>'+table(s.model.genes,[['symbol','Gene'],['gene_id','Gene ID'],['direction','Direction'],['coef','LASSO coefficient']]);else h+='<p><b>No model was fitted.</b> '+esc(s.model.note)+'</p>'}
+ if(s.performance){h+='<h3>Development performance (optimistic, not validation)</h3>'+table(s.performance.rows,[['n','n'],['AUC','AUC'],['ci_low','CI low'],['ci_high','CI high'],['TP','TP'],['FN','FN'],['TN','TN'],['FP','FP']]);if(s.performance.sens_spec)h+=table(s.performance.sens_spec,[['sensitivity','Sensitivity'],['sens_ci_low','CI low'],['sens_ci_high','CI high'],['specificity','Specificity'],['spec_ci_low','CI low'],['spec_ci_high','CI high']])}
+ h+='<h3>Limitations</h3><ul>'+s.limitations.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>';$('tab-summary').innerHTML=h}
+async function showFigures(){const r=await api('GET','/api/jobs/'+cur+'/figures');const f=r.ok?r.j.figures:[];
+ $('tab-figures').innerHTML=f.length?'<div class="grid">'+f.map(x=>{const u='/api/jobs/'+cur+'/files/'+x.path;return '<figure><a href="'+u+'" target="_blank"><img loading="lazy" src="'+u+'" alt="'+esc(x.caption)+'"></a><figcaption>'+esc(x.caption)+'</figcaption></figure>'}).join('')+'</div>':'<p class="small">No figures yet: the report step writes them at the end of the run.</p>'}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.getAttribute('data-t');document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x===b));
+ ['summary','figures','log'].forEach(t=>$('tab-'+t).hidden=t!==tab);refresh()});
+/* ---- refresh: status and buttons every 5 s, the live view (rendered by the server) every 2 s ---- */
+async function refresh(){await loadRows();if(!cur)return;const r=await api('GET','/api/jobs/'+cur);if(!r.ok)return;const d=r.j;
+ $('jstatus').innerHTML='<span class="s-'+d.status+'">'+d.status+'</span> <span class="small">'+esc(d.message)+'</span>';
+ const editable=['created','validated','invalid'].includes(d.status);curEditable=editable;$('upload').disabled=!editable;$('validate').disabled=!editable;$('submit').disabled=!editable;
+ $('resume').disabled=!['failed','cancelled'].includes(d.status);$('cancel').disabled=!['queued','running'].includes(d.status);$('delete').disabled=['queued','running'].includes(d.status);
+ const el=$('exportLink');el.hidden=d.status!=='succeeded';el.href='/api/jobs/'+cur+'/export.zip';const rl=$('reportLink');rl.hidden=d.status!=='succeeded';rl.href='/api/jobs/'+cur+'/files/10_report/report/report.html';
+ $('log').textContent=(d.log_tail||[]).join('\n')||'(no log yet)';
+ if(tab==='summary')showSummary();else if(tab==='figures')showFigures()}
+async function live(){if(!cur)return;try{const r=await fetch('/api/jobs/'+cur+'/live.html',{cache:'no-store'});if(r.ok)$('live').innerHTML=await r.text()}catch(e){}}
+loadDemo();setInterval(refresh,5000);setInterval(live,2000);refresh();
+</script></main></body></html>

@@ -1,0 +1,225 @@
+# PREREG prognostic: DRAFT v2 (not registered, not approved, nothing run)
+
+Written 2026-10-19 from the repository state only. **No analysis was run, no expression data was downloaded, and no expression value was
+read together with an outcome.** This draft builds on the hashed v1 draft
+`results_rc1prep_19/prereg_20261017/PREREG_prognostic.md` (sha256 `97680066594d949794dbc2e2dee20b5977537df6c4bf31abd2f48e6351ed54b7`,
+2026-10-16T07:01:48Z, awaiting owner approval). Where v2 differs from v1 it says **(changed from v1)**. v1 and its hash stay as they are;
+after owner approval this text is written as a new hashed version next to v1, following v1's change policy.
+Labels: VERIFIED = re-read from a file named here today; NOT VERIFIED = not checked; **TO DECIDE** = owner decision needed before any run;
+**DECIDED** = owner decision 2026-10-19 (all recommendations accepted); **PENDING** = decided, but an action is needed before the final hashed version.
+
+## 1. Question and endpoint
+
+- **Question:** does a gene-expression risk score from the primary tumour separate colon-cancer patients by survival, beyond age and stage?
+  Research risk score only; not clinical validation; the locked diagnostic model is not involved.
+- **Cohort:** TCGA-COAD primary tumours, one file per patient (458 tumour patients in the existing diagnostic prep, VERIFIED in v1).
+- **Endpoint (DECIDED):** primary endpoint **overall survival (OS)** from the **TCGA-CDR** (Liu et al., Cell 2018, doi 10.1016/j.cell.2018.02.052,
+  PMC6066282): event = column `OS` (1 death from any cause, 0 alive), time = `OS.time` in days, sheet `TCGA-CDR`, rows with `type` = COAD.
+  **PFI** (progression-free interval, `PFI` / `PFI.time`) is a secondary endpoint, **report-only**, not part of any pass rule.
+- **CDR clinical table (downloaded 2026-10-19, clinical only):** `data_public/tcga_cdr_20261019/TCGA-CDR-SupplementalTableS1.xlsx`, URL
+  `https://api.gdc.cancer.gov/data/1b5f413e-a8d1-4d10-92eb-7c4ae739ed81` (linked from https://gdc.cancer.gov/about-data/publications/pancanatlas),
+  downloaded 2026-10-19T10:08:26Z, 2,945,129 bytes, sha256 `ea594c0fbb6731477c7ac511fab449ca9c38b0d42d269591ed9f5c4090e75a5a` (VERIFIED,
+  `data_public/tcga_cdr_20261019/SOURCES.tsv`).
+- **The paper's recommendation for COAD** (main text, PMC6066282 full text retrieved via NCBI E-utilities, sha256 in the same SOURCES.tsv;
+  VERIFIED): "Overall, we recommend use of all four endpoints without reservation for 13 of the 33 cancer types: bladder urothelial carcinoma
+  (BLCA), cervical squamous cell carcinoma (CESC), colon adenocarcinoma (COAD), esophageal carcinoma (ESCA), head and neck squamous cell
+  carcinoma (HNSC), kidney renal papillary cell carcinoma (KIRP), lung adenocarcinoma (LUAD), LUSC, OV, pancreatic adenocarcinoma (PAAD),
+  sarcoma (SARC), stomach adenocarcinoma (STAD), and uterine corpus endometrial carcinoma (UCEC)."
+  The table's own notes sheet (`TCGA-CDR_Notes`) adds, for all cancer types: "For clinical outcome endpoints, we recommend the use of PFI for
+  progression-free interval, and OS for overall survival. Both endpoints are relatively accurate. Given the relatively short follow-up time,
+  PFI is preferred over OS." **DECIDED (owner, 2026-10-19, after reading this note and Table 3): OS stays the primary endpoint;**
+  PFI stays report-only.
+- **The CDR COAD endpoint note (Table 3, "Assessment and Recommended Use of the Endpoints of OS, PFI, DFI, and DSS"; COAD row, exact;
+  VERIFIED from the PMC6066282 full text):** `COAD | 459 | ✓ | 102 | 357 | ✓ | 123 | 336 | ✓ | 24 | 166 | ✓ app. | 64 | 379 |` with columns
+  Type | N | OS Use | Event | Censored | PFI Use | Event | Censored | DFI Use | Event | Censored | DSS Use | Event | Censored |
+  Explanation/Caution (empty for COAD). Footnote: "✓recommended for use (passed at least passed one of the 3 tests in step 1 and the
+  supplemental checks in step 2 as described in the STAR Methods);×not recommended for use;*caution, see the explanation/caution column;
+  app., approximate; acc., accurate." So for COAD, OS (102 events, 357 censored), PFI (123 events, 336 censored) and DFI are recommended,
+  and DSS is recommended as approximate, with no caution.
+- **Time unit and horizon (DECIDED):** days; **no administrative censoring** in the main analysis (as v1); 5-year KM survival is reported only.
+
+## 2. Data and split rule
+
+- **Inputs (already on disk, hashes in v1 section 1):** `data_public/tcga_coad/gdc_cases_clinical.json` (GDC release 46.0, 461 cases);
+  `results_rc1prep_19/validation_tcga_coad_diagnostic_20261016/prep/counts_tcga_coad_v50.tsv` (GDC STAR counts, `unstranded` column,
+  mapped to GENCODE v50). GDC does not state strandedness. First check 2026-10-19 (documentation and metadata only; no count file
+  read): the GDC mRNA pipeline page (https://docs.gdc.cancer.gov/Data/Bioinformatics_Pipelines/Expression_mRNA_Pipeline/)
+  says only "The primary counting data is generated by STAR and includes a gene ID, unstranded, and stranded counts data." and contains no
+  sentence on TCGA library strandedness; the GDC read-group field `library_strand` (values Unstranded / First_Stranded / Second_Stranded /
+  Not Applicable) is **missing for all 1,188** TCGA-COAD RNA-Seq aligned-read files (GDC files API facet, 2026-10-19).
+  **Column-total check (owner approval 2026-10-19; column totals only, no gene-level values, no outcomes; VERIFIED,
+  `results_rc1prep_19/prognostic_prep_20261019/strandedness/`):** per file, the totals of `stranded_first` and `stranded_second` over gene
+  rows as a fraction of the `unstranded` total. Of the 499 files used in the prep, the median fractions are 0.557 and 0.559 (5th to 95th
+  percentile 0.539-0.568 and 0.549-0.572): both strands carry about half the reads, as expected for **unstranded** libraries.
+  **4 of the 499 files** (20 of all 522) have one fraction > 0.80 (maximum 1.042, minimum 0.053): they look **stranded**.
+  **TO DECIDE:** keep the `unstranded` column for all 499 files (it counts reads regardless of strand, so it is defined for both library
+  types; my reasoning, not a GDC statement) and list the 4 stranded-like files in the report; or exclude those 4 files before the split.
+- **Split (DECIDED, changed from v1):** patient level, after exclusions; **stratified by event status x stage group** (event / censored x
+  early / late / unknown; v1 stratified by event status only); patients sorted by ID, strata in the order (event, early), (event, late),
+  (event, unknown), (censored, early), (censored, late), (censored, unknown), each shuffled with Python `random.Random(42)` (one generator,
+  used across the strata in that order); one third of each stratum to the hold-out (`round(n/3)`). The hold-out is scored once, at the end.
+- **Expected events (recounted 2026-10-19, aggregates only; VERIFIED, `results_rc1prep_19/prognostic_prep_20261019/counts/`):** of the 458
+  tumour patients, 2 are not in the CDR (COAD) and 17 have `OS.time` missing or <= 0; age is present for all others; **439 patients kept,
+  98 OS events**. Expected hold-out from the per-stratum rule round(n/3): **33 events** (147 patients), training 65 events. The 3-MAD QC
+  (needs counts) and the neoadjuvant rule (TO DECIDE, section 3) were **not** applied in this count. No patient was assigned to a side.
+  Disclosure: the count produced whole-cohort event totals per stage group (events among early 32 of 242, late 61 of 186, unknown 5 of 11);
+  this is descriptive information related to the P2 stage control, not by hold-out group; no model, test or plot was computed.
+  For comparison, CDR Table 3 lists 102 OS events among 459 COAD patients before our exclusions.
+- **Power-check rule (owner, 2026-10-19):** if the recounted expected hold-out events differ by **more than 10 %** from the 34 and 32 events
+  used in the power check, the power check is rerun before approval. Recount: **33 expected hold-out events** = -2.9 % vs 34 and +3.1 %
+  vs 32, so the power check is **not** rerun. The counts are recomputed once more after the 3-MAD QC and the neoadjuvant rule are applied
+  at run time, and the same 10 % rule is reported then.
+
+## 3. Sample exclusion rule (applied before the split; every excluded patient listed with its reason)
+
+From v1: vital status not Dead or Alive (2 of 461, VERIFIED); time missing or time <= 0 (7 of 102 deaths have `days_to_death = 0`,
+VERIFIED); alive without any follow-up time; age missing (2 of 461, VERIFIED). Counts among the 458 tumour patients: NOT VERIFIED.
+
+**DECIDED (changed from v1, new rules):**
+- **Sample QC:** a tumour sample is excluded if its library size (counts column total) lies more than 3 MAD from the median of all candidate
+  tumour samples (the pipeline's cohort-QC 3-MAD rule, applied once to the candidates before the split; written down now, not tuned).
+  The 3-MAD library-size rule uses all candidate tumours, including those that later go to the hold-out; it uses library size only and
+  no outcome data.
+- **Prior neoadjuvant treatment:** excluded if recorded. Field-name check 2026-10-19 (names only, no values read): **no field named
+  "neoadjuvant"** exists in the CDR table (33 columns) or the GDC clinical JSON (119 field paths). Candidate fields whose names do not say
+  whether they record neoadjuvant treatment: GDC `diagnoses[].prior_treatment`, `diagnoses[].treatments[].treatment_intent_type`,
+  `diagnoses[].treatments[].treatment_type`; CDR `treatment_outcome_first_course` (used by the CDR to derive DFI, so not a treatment-timing field).
+  **Value-level check (owner approval 2026-10-19; distinct levels with counts only, no link to outcomes; VERIFIED,
+  `results_rc1prep_19/prognostic_prep_20261019/neoadjuvant/levels.txt`), 461 cases:**
+  - `diagnoses[].treatments[].treatment_intent_type`: Adjuvant (841 entries, 385 cases), Palliative (19, 5), Not Reported (10, 2),
+    null/absent (864, 199). **No "Neoadjuvant" level is used**, although the GDC dictionary allows it.
+  - `diagnoses[].prior_treatment`: No (456 entries, 456 cases), Yes (114, 94), Not Reported (2, 2), null/absent (76, 65). GDC dictionary
+    definition: "A yes/no/unknown/not applicable indicator related to the administration of therapeutic agents received before the body
+    specimen was collected." Some cases have more than one diagnosis record, so a "Yes" may belong to a diagnosis other than the COAD primary.
+  **TO DECIDE:** (i) exclude patients with `prior_treatment` = Yes on the COAD primary diagnosis record (needs a further field-level check to
+  identify that record, e.g. by its primary-diagnosis fields; no outcomes), or (ii) record the neoadjuvant rule as "not applicable" (no
+  neoadjuvant level is used) and report the `prior_treatment` counts only.
+- **Histology:** no restriction; **all COAD as registered by GDC**; the histology mix is reported.
+- **Unknown stage:** kept in the main model as stage group **unknown** (as v1); excluded only from the P2 stage control.
+
+## 4. Method (all fitting on training patients only)
+
+1. **Expression scale (DECIDED, changed from v1):** log2(CPM + 1), CPM from the sample's total over all genes (v1), then each gene is
+   **z-scaled with the training mean and SD**; the mean and SD are stored in the model file and applied unchanged to the hold-out, so
+   coefficients and the risk score are per SD (as in the power check). Inside the nested CV (step 5) the mean and SD come from the 4 fitting
+   folds only.
+2. **Pre-filter:** count >= 1 in at least 50 % of training patients (v1).
+3. **Screening:** per gene, `coxph(Surv(time, event) ~ gene + age + stage group)`, Wald p of the gene term, Benjamini-Hochberg, keep
+   q < 0.10 (`prognostic_cox_screen_q: 0.10`, `config/questions.yaml`, PROVISIONAL, no source). Non-converging genes dropped and counted.
+4. **Penalised Cox:** glmnet `family = "cox"`, `alpha = 1`, 5-fold CV stratified by event, seed 42, `lambda.1se`; age and stage indicators
+   unpenalised (`penalty.factor = 0`) (v1).
+5. **Selection inside cross-validation (changed from v1):** v1 screens once on all training patients and then cross-validates only
+   lambda, so the internal CV estimate would be optimistic. v2 repeats **steps 2 to 4 inside each outer fold** (outer 5-fold, stratified by
+   event, seed 43): screen and fit on 4 folds, score the left-out fold. This gives the internal (training-only) C-index without leakage.
+   The final model is then fitted once on all training patients with steps 2 to 4; the hold-out never enters any step.
+   **DECIDED:** outer K = 5, **one repeat** (seed 43).
+6. **Risk score:** the gene part of the linear predictor only (sum of coefficient x expression); the clinical-only model is reported apart.
+7. **Cut-off (DECIDED):** the **median** risk score of the training patients, stored in the model file and never re-estimated (v1);
+   tertile groups are reported only; **no data-driven optimal cut-off**.
+
+## 5. Metrics and pass rule (fixed before any result)
+
+**Metrics, hold-out, scored once:** Harrell C-index (`survival::concordance`, `reverse = TRUE`) with 95 % CI = C +/- 1.96 x SE (the
+pre-specified CI used by the pass rule; DECIDED); a bootstrap 95 % CI (2,000 resamples of hold-out patients, seed 44) is reported only and
+never replaces the pre-specified CI (the power check showed the plain CI is slightly lenient, section 7); KM curves and log-rank p
+(high vs low at the training median); HR high vs low with 95 % CI; C-index of clinical-only (age + stage) and of gene score + clinical.
+Internal nested-CV C-index (section 4.5) reported as training-only, not as validation.
+
+**Pass rule** (v1 criteria P1 to P6 kept; P4 was report-only in v1):
+- P1 run finishes; >= 20 events in training and in hold-out; no patient on both sides (`prognostic_min_events: 20`, PROVISIONAL).
+- P2 positive control: stage late vs early, HR > 1 and p < 0.05, full cohort.
+- P3 negative control: permuted (time, event) on training, whole pipeline refitted, hold-out C-index 95 % CI contains 0.5.
+- P5 cut-off is the stored training median; PH test written to the report.
+- P6 re-run with the same seeds gives byte-identical gene, coefficient and score tables and the same C-index.
+- **P4 (DECIDED, changed from v1: now graded, required).** PASS if the **hold-out C-index lower 95 % bound (pre-specified CI) is > 0.50**.
+  The comparison "gene score + clinical vs clinical-only" is **reported only**, not graded (its power was not simulated). With about 32-34
+  hold-out events the power for P4 is about 89-90 % at HR 2 per SD and about 50 % at HR 1.5 for an exactly known score (section 7).
+  A FAIL on P4 means "no effect shown with this sample size", not "no effect", because the power is only about 50 % at HR 1.5.
+
+## 6. Checks (reported; failing a check is reported as is, never fixed by changing the method)
+
+- **Proportional hazards:** `survival::cox.zph` on the final training model and on the hold-out score model; global and per-term p.
+- **Events per variable (DECIDED):** training events / (selected genes + covariate degrees of freedom), **reported only; no minimum and no
+  cap on the number of genes** (the penalised Cox limits overfitting; the usual rule of about 10 per variable is for unpenalised models,
+  source NOT VERIFIED).
+- **Cohort overlap:** patients on both sides of the split (must be 0, two scripts). TCGA-COAD vs the 19 development and 15 validation
+  samples (different studies, SRP219837 / SRP301216 / SRP344867 / SRP245232): person overlap NOT VERIFIED and cannot be checked from public
+  metadata. The same TCGA patients were used in the diagnostic TCGA validation (tumour vs normal); the outcome was not used there.
+- **Comparison with a proliferation score:** a fixed proliferation signature scored the same way (mean z-score of its genes) and its
+  hold-out C-index reported next to the gene score, to show whether the gene score is more than proliferation; report-only, not graded.
+  **DECIDED (owner, 2026-10-19), FIXED, not to be changed:** the union of MSigDB Hallmark **HALLMARK_E2F_TARGETS** and
+  **HALLMARK_G2M_CHECKPOINT** (Liberzon et al., Cell Syst 2015, doi 10.1016/j.cels.2015.12.004; PMID 26771021 in the MSigDB metadata),
+  **MSigDB release 2026.1.Hs**, scored as **one mean z-score** over the union (each gene once; z with the training mean and SD, as section 4.1).
+  Files (VERIFIED, `data_public/msigdb_hallmark_20261019/SOURCES.tsv`): `h.all.v2026.1.Hs.symbols.gmt`
+  (https://data.broadinstitute.org/gsea-msigdb/msigdb/release/2026.1.Hs/h.all.v2026.1.Hs.symbols.gmt, 2026-10-19T10:11:13Z, sha256
+  `eecaf6dad908334ae885406ec72bdc0646d8917588ed7c219fac92fc5363f596`) and `h.all.v2026.1.Hs.json` (sha256
+  `bc465ea8f94009689abdff725ffa16bbd9a38a7d13a876d046727fae49f61f2c`). E2F_TARGETS 200 genes, G2M_CHECKPOINT 200 genes, union **327**
+  (73 in both); all 327 symbols map to exactly one GENCODE v50 gene ID in `ref/gene_id_to_symbol.tsv` (0 unmapped). Fixed list:
+  `results_rc1prep_19/prognostic_prep_20261019/proliferation/proliferation_genes_hallmark_v2026.1.Hs.tsv` (sha256
+  `29cd579ec7b284ed4731930141b0a9f97a30aa0603e836e78790c3bb27ee1648`). Release 2026.2.Hs (2026-10-15) differs only by two symbol renames
+  (TBRG4 -> FASTKD4, NCL -> NUCLEOLIN), not by genes; 2026.1.Hs is used because its symbols match our annotation.
+
+## 7. Power check status
+
+**Done 2026-10-19 (synthetic data only, no real patient data read).** The earlier check in
+`results_rc1prep_19/prereg_20261017/r4_power_check/` is the predictive R4 check and is not this one.
+
+- **Success rule (owner, stated before running):** adequately powered if the chance that the hold-out C-index lower 95 % bound exceeds
+  0.50 is >= 80 % at HR 2 per SD of the score. HR 1.5 and 3 for context; HR 1 as a sanity check.
+- **Event counts used:** 34 = 102 OS deaths / 3 (PLAN.md, v1); 32 = 95 / 3 after the 7 deaths with time 0 (v1). Hold-out size 153 = 458 / 3.
+  Exact counts after all exclusions not recomputed (NOT VERIFIED).
+- **Design:** score ~ N(0, 1); exponential event times with HR per SD; exponential censoring calibrated to the target events;
+  `survival::concordance(..., reverse = TRUE)`, CI = C +/- 1.96 x SE; seed 20261019; 1,000 repeats per scenario.
+  Files: `results_rc1prep_19/prognostic_power_check_20261019/` (script + sha256, `results/summary.tsv`, per-repeat tables, run log).
+
+| Hold-out events | HR 1 (no effect) | HR 1.5 | HR 2 | HR 3 |
+|--|--|--|--|--|
+| 34 | 3.0 % | 52.8 % | **90.3 %** (95 % CI 88.3-92.1) | 99.7 % |
+| 32 | 3.7 % | 50.0 % | **88.8 %** (95 % CI 86.7-90.7) | 99.7 % |
+
+- **Result: success rule MET** at HR 2 for 34 and for 32 events (VERIFIED, `summary.tsv`).
+- At HR 1.5 power is only about 50 %: a null hold-out result would not exclude a smaller effect.
+- Under no effect the false-pass rate is 3.0-3.7 %, slightly above the nominal 2.5 %: the plain C-index CI is a little lenient.
+- **Limitation:** the score is known exactly (no gene-selection noise), so the real power of the full pipeline is lower than these numbers.
+- **Event recount (2026-10-19, section 2):** 439 patients and 98 CDR OS events after the exclusions that need no counts; **33 expected
+  hold-out events** (65 training), i.e. -2.9 % vs 34 and +3.1 % vs 32. **Rule:** rerun the power check if the difference exceeds 10 %;
+  here it does not, so the power check is **not** rerun.
+
+## 8. What each step can answer (one line each)
+
+- Exclusions and split: how many patients and events are usable, and whether both sides have enough events to test anything.
+- P2 stage control: whether the outcome data behave as expected (stage separates survival), so a failure points to data, not genes.
+- Screening: which genes are associated with survival after age and stage in the training set (association, not validation).
+- Penalised Cox: a small gene set and weights that predict risk in training.
+- Nested CV: an internal, leakage-free estimate of how well the selection procedure works, on training patients only.
+- Hold-out C-index / KM / HR: whether the score separates survival in patients never used for fitting (the main answer).
+- Gene + clinical vs clinical-only: whether the genes add information beyond age and stage.
+- Proliferation comparison: whether the score is more than a generic proliferation signal.
+- P3 permutation control: whether the pipeline produces apparent signal from noise.
+- PH and EPV checks: whether the Cox assumptions and model size are reasonable, i.e. how far the numbers can be trusted.
+- P6 re-run: whether the result is reproducible on this code and pod.
+- Power check: whether a null hold-out result would mean "no effect" or only "too few events to tell".
+
+## 9. Decisions (owner, 2026-10-19: all recommendations accepted) and pending actions
+
+**DECIDED:** primary endpoint OS (CDR curated if the download is approved, else GDC fields), PFI report-only; no horizon (5-year KM
+report-only); split stratified by event x stage group; exclusions: 3-MAD library-size QC, neoadjuvant if recorded, all COAD histologies,
+unknown stage kept as a category; z-scaled genes (training mean and SD); outer CV K = 5, one repeat, seed 43; training-median cut-off,
+tertiles report-only, no optimal cut-off; P4 graded on the lower 95 % bound > 0.50, gene + clinical vs clinical-only report-only;
+EPV report-only, no cap; one published proliferation signature, report-only; plain C-index CI pre-specified, bootstrap CI report-only;
+the PROVISIONAL values kept: `prognostic_min_events: 20` and `prognostic_cox_screen_q: 0.10` (still without an external source).
+
+**Done 2026-10-19:** (1) CDR clinical table downloaded and the COAD recommendation quoted (section 1); (2) neoadjuvant field-name check
+(section 3); (3) proliferation signature fixed: Hallmark E2F_TARGETS + G2M_CHECKPOINT, MSigDB 2026.1.Hs (section 6); (4) GDC strandedness
+documentation and metadata checked (section 2); OS events recounted: 33 expected hold-out events, power check not rerun (sections 2, 7).
+
+Also done 2026-10-19: strandedness column-total check (section 2) and neoadjuvant value-level check (section 3); CDR Table 3 COAD row quoted
+(section 1); power-check 10 % rule stated with the recount (sections 2, 7).
+
+**DECIDED (owner, 2026-10-19):** OS primary endpoint confirmed after the CDR notes and Table 3 (section 1); the strandedness column-totals
+check and the neoadjuvant value-level check are approved as run (counts only, no gene-level values, no outcomes; sections 2 and 3).
+
+**TO DECIDE before the final hashed version:** (a) strandedness: keep the `unstranded` column for all 499 files and list the 4
+stranded-like files, or exclude those 4 before the split; (b) neoadjuvant: exclude `prior_treatment` = Yes on the COAD primary diagnosis
+(needs a further field-level check to identify that record; no outcomes), or record the rule as not applicable. Nothing runs on real data
+until these are decided, the final text is hashed, and the owner approves it.

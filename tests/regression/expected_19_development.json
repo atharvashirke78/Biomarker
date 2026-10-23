@@ -1,0 +1,38 @@
+{
+  "_about": "Documented expected results of the 19-sample DEVELOPMENT analysis (rc1-prep, lock-diagnostic-v1). Used by check_19_development.py. Values are copied from the cited source files; they are development-data facts, not validation results.",
+  "cohort": {
+    "n_samples": 19, "n_normal": 10, "n_tumour": 9,
+    "per_study": {"SRP219837": {"normal": 5, "tumour": 5}, "SRP301216": {"normal": 5, "tumour": 4}},
+    "n_patients": 11, "n_tumour_normal_pairs": 8,
+    "_source": "results_rc1prep_19/sample_sheet_rc1prep.tsv; results/09_verification/sample_map_with_patient.tsv (T5_B / SRR13401190 excluded, QC FAIL)"
+  },
+  "de_featurecounts": {
+    "genes_after_prefilter": 15111, "tested_nonNA_pvalue": 14872, "padj_lt_0.05": 4006,
+    "rule1_total": 2336, "rule1_up": 834, "rule1_down": 1502,
+    "_source": "results_rc1prep_19/deseq2_summary.json (15111, 14872, 4006); rule 1 counts: results_rc1prep_19/rule3b_rerun18_cfg/funnel_counts.tsv (2336) and diagnostic_report_20261015/de_summary_by_route.tsv"
+  },
+  "de_salmon": {
+    "genes_after_prefilter": 15959, "tested_nonNA_pvalue": 15747, "padj_lt_0.05": 3709,
+    "rule1_total": 2464, "rule1_up": 840, "rule1_down": 1624,
+    "_source": "results_rc1prep_19/deseq2_salmon_summary.json; rule3b_rerun18_cfg/funnel_counts.tsv (2464)"
+  },
+  "funnel": {
+    "rule1_either": 2899, "rule2": 2612, "rule3a": 1864, "rule3b_final": 1390, "rule3b_final_protein_coding": 1353, "basemean50_tier": 1233,
+    "_source": "results_rc1prep_19/rule3b_rerun18_cfg/funnel_counts.tsv; docs/run_log.md:222"
+  },
+  "final_candidates": {
+    "n": 1390, "up": 510, "down": 880, "protein_coding": 1353,
+    "_source": "results_rc1prep_19/final_candidates/final_candidates_18of19.tsv; results_rc1prep_19/reactome/mapping_summary.tsv (510 / 880)"
+  },
+  "reactome": {
+    "ora_up_significant": 142, "ora_down_significant": 24, "ora_combined_significant": 24, "gsea_significant": 385,
+    "_source": "results_rc1prep_19/reactome/analysis_summary.tsv; results_rc1prep_19/reactome.log"
+  },
+  "locked_model": {
+    "n_genes": 9, "n_up": 8, "n_down": 1, "cutoff": 1.352325902,
+    "reference_scores": "results_rc1prep_19/lock_proposal_v2/development_scores.tsv",
+    "max_abs_score_diff": 1e-10,
+    "development_correct": 19,
+    "_source": "lock/diagnostic_v1/final_model_genes.tsv, final_model_spec.txt; lock_proposal_v2/development_performance.tsv (TP 9, TN 10)"
+  }
+}

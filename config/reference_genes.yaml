@@ -1,0 +1,112 @@
+# Reference genes for normalisation: LOCKED 2026-10-14 (lock-diagnostic-v1). Previously PROPOSED. Numbers below are from the NEW fit (alpha 0.05, pre-filter n = 9). Chosen from the Eisenberg & Levanon 2013 housekeeping list on the 19 diagnostic samples only.
+status: LOCKED
+source: "Eisenberg E, Levanon EY. Human housekeeping genes revisited. Trends Genet 29 (2013), doi 10.1016/j.tig.2013.05.010; list file https://www.tau.ac.il/~elieis/HKG/HK_genes.txt, downloaded 2026-10-13, md5 3c29a7d8976857b6242b317bf58ba25b"
+date: 2026-10-13
+samples: 19 diagnostic samples (featureCounts route); the 15 validation samples were not used
+filters: tested on both routes; not rule 1 on either route; baseMean >= 100 on both routes (FROZEN); equivalence = 90% CI of tumour-vs-normal log2FC inside +/-0.5 (FROZEN), also reported at +/-0.3 (FROZEN)
+ranking: equivalent at 0.5 first, then lowest CV of VST (blind, all 19 samples)
+not used: the nine genes of the Ribas 2026 preprint
+frozen: true             # list of 10, baseMean filter and margins must not be revised after the test
+basemean_min_both_routes: 100   # FROZEN filter used to build the list
+equivalence_margins_log2fc: [0.5, 0.3]   # FROZEN
+genes:
+  - gene_id: ENSG00000003756   # unversioned Ensembl
+    symbol: RBM5
+    rank: 1
+    vst_mean: 10.13
+    vst_cv: 0.0192
+    log2FC_tumour_vs_normal: 0.021
+    ci90: [-0.175, 0.218]
+    study_coef_B_vs_A: 0.021
+    equivalent_0.5: true
+    equivalent_0.3: true
+  - gene_id: ENSG00000151923   # unversioned Ensembl
+    symbol: TIAL1
+    rank: 2
+    vst_mean: 9.59
+    vst_cv: 0.0194
+    log2FC_tumour_vs_normal: 0.043
+    ci90: [-0.142, 0.229]
+    study_coef_B_vs_A: -0.032
+    equivalent_0.5: true
+    equivalent_0.3: true
+  - gene_id: ENSG00000081307   # unversioned Ensembl
+    symbol: UBA5
+    rank: 3
+    vst_mean: 8.52
+    vst_cv: 0.0223
+    log2FC_tumour_vs_normal: 0.152
+    ci90: [-0.024, 0.328]
+    study_coef_B_vs_A: 0.176
+    equivalent_0.5: true
+    equivalent_0.3: false
+  - gene_id: ENSG00000014824   # unversioned Ensembl
+    symbol: SLC30A9
+    rank: 4
+    vst_mean: 9.50
+    vst_cv: 0.0236
+    log2FC_tumour_vs_normal: -0.056
+    ci90: [-0.271, 0.159]
+    study_coef_B_vs_A: 0.029
+    equivalent_0.5: true
+    equivalent_0.3: true
+  - gene_id: ENSG00000099783   # unversioned Ensembl
+    symbol: HNRNPM
+    rank: 5
+    vst_mean: 10.97
+    vst_cv: 0.0239
+    log2FC_tumour_vs_normal: 0.218
+    ci90: [0.041, 0.394]
+    study_coef_B_vs_A: 0.313
+    equivalent_0.5: true
+    equivalent_0.3: false
+  - gene_id: ENSG00000105127   # unversioned Ensembl
+    symbol: AKAP8
+    rank: 6
+    vst_mean: 8.90
+    vst_cv: 0.0240
+    log2FC_tumour_vs_normal: -0.002
+    ci90: [-0.216, 0.211]
+    study_coef_B_vs_A: -0.118
+    equivalent_0.5: true
+    equivalent_0.3: true
+  - gene_id: ENSG00000115234   # unversioned Ensembl
+    symbol: SNX17
+    rank: 7
+    vst_mean: 9.68
+    vst_cv: 0.0244
+    log2FC_tumour_vs_normal: -0.279
+    ci90: [-0.474, -0.083]
+    study_coef_B_vs_A: -0.018
+    equivalent_0.5: true
+    equivalent_0.3: false
+  - gene_id: ENSG00000169714   # unversioned Ensembl
+    symbol: CNBP
+    rank: 8
+    vst_mean: 11.36
+    vst_cv: 0.0255
+    log2FC_tumour_vs_normal: -0.236
+    ci90: [-0.484, 0.013]
+    study_coef_B_vs_A: 0.125
+    equivalent_0.5: true
+    equivalent_0.3: false
+  - gene_id: ENSG00000136448   # unversioned Ensembl
+    symbol: NMT1
+    rank: 9
+    vst_mean: 9.69
+    vst_cv: 0.0257
+    log2FC_tumour_vs_normal: -0.064
+    ci90: [-0.306, 0.179]
+    study_coef_B_vs_A: 0.032
+    equivalent_0.5: true
+    equivalent_0.3: false
+  - gene_id: ENSG00000078304   # unversioned Ensembl
+    symbol: PPP2R5C
+    rank: 10
+    vst_mean: 9.89
+    vst_cv: 0.0259
+    log2FC_tumour_vs_normal: 0.039
+    ci90: [-0.197, 0.276]
+    study_coef_B_vs_A: -0.085
+    equivalent_0.5: true
+    equivalent_0.3: true
