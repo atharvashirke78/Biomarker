@@ -355,6 +355,32 @@ class TestUpgrades(Base):
         self.assertFalse(os.path.exists(db.paths(jid3)['root']))
         self.assertIsNotNone(db.get(jid))
 
+    def test_summary_shows_strandedness_rnaqc_and_validation_and_chart_has_new_stages(self):
+        jid = self.new_job('newparts')
+        o = db.paths(jid)['output']
+        for d in ('05_cohort_qc', '09_discover/04_validation'):
+            os.makedirs(os.path.join(o, d))
+        def w(rel, text):
+            open(os.path.join(o, rel), 'w').write(text)
+        w('05_cohort_qc/strandedness_check.tsv', 'srr\tlabel\trseqc_forward\trseqc_reverse\trseqc_failed\trseqc_call\tsalmon_format\tsalmon_call\tfeaturecounts_s\tagree\tnote\n'
+                                                'S1\ts1\t0.9\t0.05\t0.05\tforward\tISF\tforward\t1\tyes\t\nS2\ts2\t0.02\t0.9\t0.08\treverse\tIU\tunstranded\t0\tNO\tcheck\n')
+        w('05_cohort_qc/rna_qc_metrics.tsv', 'srr\tlabel\texonic_pct\tintronic_pct\tdup_rate_pct\ttin_median\tbias_3p_5p\trrna_pct\tmito_pct\tflags\nS1\ts1\t98\t1\t10\t60\t1\t1\t1\t\nS2\ts2\t90\t9\t50\t20\t4\t1\t1\ttin_median low (robust z -4.0)\n')
+        w('09_discover/04_validation/nested_validation_summary.tsv', 'metric\tvalue\tci_low\tci_high\tlabel\nAUC_nested_pooled\t0.9\t0.7\t1\tNESTED, rules 1-2 only; NOT independent validation\n')
+        code, v = self.j('GET', '/api/jobs/%s/summary' % jid)
+        sm = v['summary']
+        self.assertEqual((sm['strandedness']['n'], sm['strandedness']['n_disagree']), (2, 1))
+        self.assertEqual(sm['strandedness']['rows'][0]['sample'], 'S2')
+        self.assertEqual([r['sample'] for r in sm['rna_qc']['flagged']], ['S2'])
+        self.assertIn('NOT independent', sm['validation']['nested'][0]['label'])
+        keys = [x['key'] for x in stages.compute({}, 6, 'running')]
+        self.assertIn('qcx', keys)
+        self.assertIn('valid', keys)
+        self.assertEqual(next(x for x in stages.compute({}, 6, 'running') if x['key'] == 'qcx')['expected'], 4 + 2 * 6)
+        self.assertEqual(set(render.POS), set(keys))                                  # every stage has a box in the chart
+        code, live = req('GET', '%s/api/jobs/%s/live.html' % (self.base, jid))
+        self.assertEqual(code, 200)
+        self.assertIn(b'Strand + RNA QC', live)
+
     def test_access_guard(self):
         self.assertEqual(req('GET', self.base + '/api/jobs', headers={'Host': 'evil.example'})[0], 403)              # DNS rebinding
         self.assertEqual(req('POST', self.base + '/api/jobs', b'{}', {'Origin': 'http://evil.example', 'Content-Type': 'application/json'})[0], 403)   # cross-site write

@@ -86,7 +86,7 @@ rect.bar{fill:var(--warn)}.st-done rect.bar{fill:var(--ok)}
 <li>A team re-analyses a public cohort with a fixed, documented workflow.</li>
 <li>A group checks whether a small cohort is large enough for the full model, and gets a clear message if it is not.</li></ul>
 <h3>What you get</h3>
-<ul><li>A sample QC table (PASS / WARN / FAIL), counts, and cohort QC plots.</li><li>Differential-expression tables, volcano / MA / heatmap, and pathway enrichment (ORA and GSEA).</li>
+<ul><li>A sample QC table (PASS / WARN / FAIL), counts, cohort QC plots, an independent strandedness check and cohort-relative RNA-quality flags (duplication, transcript integrity, 3-prime bias, rRNA and mitochondrial share).</li><li>Differential-expression tables, volcano / MA / heatmap, and pathway enrichment (ORA and GSEA).</li>
 <li>A candidate table showing which rules each gene passed, and, when feasible, a model: a small gene panel, its score formula and cutoff, with performance measured on the same samples.</li>
 <li>One HTML report with the methods used, QC findings and limitations.</li></ul>
 <h3>How the steps fit together</h3>
@@ -100,11 +100,11 @@ rect.bar{fill:var(--warn)}.st-done rect.bar{fill:var(--ok)}
 <li><b>Design:</b> one batch factor is adjusted for; paired tumour/normal samples from the same patient are not modelled as pairs; no covariates such as age or sex.</li>
 <li><b>Prognostic and predictive analyses</b> (survival, treatment response) are not implemented.</li>
 <li><b>Time and capacity:</b> about 3 hours for 19 full-size samples on 16 CPUs and 64 GB; one job at a time on this pod.</li>
-<li><b>This prototype</b> has no login: it only listens on this machine. Commercial, licensing and regulatory questions have not been cleared.</li></ul>
+<li><b>This prototype</b> has no user accounts: it listens on this machine only (a remote address needs a shared token, and Host, Origin and JSON checks are always on). Regulatory questions have not been cleared; the code is MIT-licensed, the tools it runs keep their own licences.</li></ul>
 <h3>Not for</h3>
 <p>Diagnosing patients or any clinical decision; other species; single-end, long-read or single-cell data; more than two groups.</p>
 <h3>Status</h3>
-<p>The standardised version of the scripts is being validated against an earlier successful 19-sample run. The demo uses real data but is a tool demonstration only.</p>
+<p>Release candidate. The stub test suite (91 cases), the service tests and a real 6-sample run pass, and the featureCounts counts of that run are identical to an earlier run. The 19-sample and independent 15-sample validations have not been run in this version. The demo uses real data but is a tool demonstration only.</p>
 </div>
 
 <script>
@@ -173,6 +173,9 @@ async function showSummary(){const r=await api('GET','/api/jobs/'+cur+'/summary'
  if(s.candidates)h+='<h3>Candidates that passed all rules: '+s.candidates.n_pass_all_rules+'</h3>'+table(s.candidates.top,[['symbol','Gene'],['gene_id','Gene ID'],['log2fc_shrunk','log2FC (shrunk)'],['padj','padj'],['loo_passes','Leave-one-out passes']]);
  if(s.model){h+='<h3>Model</h3>';if(s.model.fitted)h+='<p>Cutoff <b>'+esc(s.model.cutoff)+'</b> (a sample is called case/tumour when its score is strictly above the cutoff).</p>'+table(s.model.genes,[['symbol','Gene'],['gene_id','Gene ID'],['direction','Direction'],['coef','LASSO coefficient']]);else h+='<p><b>No model was fitted.</b> '+esc(s.model.note)+'</p>'}
  if(s.performance){h+='<h3>Development performance (optimistic, not validation)</h3>'+table(s.performance.rows,[['n','n'],['AUC','AUC'],['ci_low','CI low'],['ci_high','CI high'],['TP','TP'],['FN','FN'],['TN','TN'],['FP','FP']]);if(s.performance.sens_spec)h+=table(s.performance.sens_spec,[['sensitivity','Sensitivity'],['sens_ci_low','CI low'],['sens_ci_high','CI high'],['specificity','Specificity'],['spec_ci_low','CI low'],['spec_ci_high','CI high']])}
+ if(s.strandedness){const t=s.strandedness;h+='<h3>Strandedness cross-check</h3><p>'+(t.n_disagree?'<b>'+t.n_disagree+' of '+t.n+' sample(s) disagree</b> with the library type read from Salmon: check the library type, gene counts of these samples may be wrong.':'All determinable samples agree with the Salmon call ('+(t.n-t.n_undetermined)+' of '+t.n+').')+(t.n_undetermined?' '+t.n_undetermined+' undetermined.':'')+'</p>'+(t.rows.length?table(t.rows,[['sample','Sample'],['rseqc','RSeQC call'],['salmon','Salmon format'],['agree','Agree'],['note','Note']]):'')}
+ if(s.rna_qc){const q=s.rna_qc;h+='<h3>RNA quality flags (cohort-relative, never exclusions)</h3>'+(q.flagged.length?table(q.flagged,[['sample','Sample'],['flags','Flagged metrics']]):'<p class="small">'+(q.small_cohort?'Fewer than 5 samples: metrics are in the report, no cohort flags are computed.':'No sample is an outlier on these metrics.')+'</p>')}
+ if(s.validation){h+='<h3>Internal validation (still optimistic, not independent)</h3>';if(s.validation.internal)h+=table(s.validation.internal,[['metric','Metric'],['value','Value'],['ci_low','CI low'],['ci_high','CI high'],['label','Note']]);if(s.validation.nested)h+='<h4>Nested (candidate screen inside every fold) with permutation null</h4>'+table(s.validation.nested,[['metric','Metric'],['value','Value'],['ci_low','CI low'],['ci_high','CI high'],['label','Note']])}
  h+='<h3>Limitations</h3><ul>'+s.limitations.map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>';$('tab-summary').innerHTML=h}
 async function showFigures(){const r=await api('GET','/api/jobs/'+cur+'/figures');const f=r.ok?r.j.figures:[];
  $('tab-figures').innerHTML=f.length?'<div class="grid">'+f.map(x=>{const u='/api/jobs/'+cur+'/files/'+x.path;return '<figure><a href="'+u+'" target="_blank"><img loading="lazy" src="'+u+'" alt="'+esc(x.caption)+'"></a><figcaption>'+esc(x.caption)+'</figcaption></figure>'}).join('')+'</div>':'<p class="small">No figures yet: the report step writes them at the end of the run.</p>'}

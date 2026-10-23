@@ -12,6 +12,7 @@ LIMITATIONS = [
     'Automated summary of the pipeline outputs. Interpretation is a separate step done by the research team.',
     'Development performance is computed on the same samples that were used to choose the genes and the cutoff: it is optimistic and is not validation.',
     'Candidate biomarkers are hypotheses. They need independent validation on samples that were not used here before any diagnostic claim.',
+    'Quality flags (strandedness, RNA-quality metrics) are relative to this cohort and never exclude a sample; when a cohort mixes studies they mostly show study differences.',
     'Research use only. Not a clinical or diagnostic device.']
 
 
@@ -80,4 +81,16 @@ def summary(job_id):
     sens = read_tsv(job_id, '09_discover/03_model/development_sens_spec.tsv')
     if perf and 'AUC' in perf[0]:
         s['performance'] = dict(rows=perf, sens_spec=sens if sens and 'sensitivity' in sens[0] else None)
+    st = read_tsv(job_id, '05_cohort_qc/strandedness_check.tsv')
+    if st:
+        s['strandedness'] = dict(n=len(st), n_disagree=sum(r.get('agree') == 'NO' for r in st), n_undetermined=sum(r.get('agree') == 'undetermined' for r in st),
+                                 rows=[dict(sample=r['srr'], rseqc=r.get('rseqc_call', ''), salmon=r.get('salmon_format', ''), agree=r.get('agree', ''), note=r.get('note', '')) for r in st if r.get('agree') != 'yes'])
+    rq = read_tsv(job_id, '05_cohort_qc/rna_qc_metrics.tsv')
+    if rq:
+        s['rna_qc'] = dict(n=len(rq), flagged=[dict(sample=r['srr'], flags=r.get('flags', '')) for r in rq if r.get('flags') and not r['flags'].startswith('not enough')],
+                           small_cohort=any((r.get('flags') or '').startswith('not enough') for r in rq))
+    iv = read_tsv(job_id, '09_discover/04_validation/internal_validation_summary.tsv')
+    nv = read_tsv(job_id, '09_discover/04_validation/nested_validation_summary.tsv')
+    if iv or nv:
+        s['validation'] = dict(internal=iv if iv and 'metric' in iv[0] else None, nested=nv if nv and 'metric' in nv[0] else None)
     return s

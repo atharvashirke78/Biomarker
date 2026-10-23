@@ -6,12 +6,12 @@ import time
 from . import resources, stages
 
 # box positions of the chart (x, y), 160 x 40 each
-POS = {'verify': (10, 10), 'fastp': (190, 10), 'star': (370, 10), 'sort': (550, 10), 'fc': (730, 10), 'salmon': (370, 70), 'qc': (10, 130),
-       'merge': (190, 130), 'cohort': (370, 130), 'de': (550, 130), 'path': (730, 130), 'cand': (10, 190), 'model': (190, 190), 'report': (370, 190)}
+POS = {'verify': (10, 10), 'fastp': (190, 10), 'star': (370, 10), 'sort': (550, 10), 'fc': (730, 10), 'salmon': (370, 70), 'qcx': (730, 70), 'qc': (10, 130),
+       'merge': (190, 130), 'cohort': (370, 130), 'de': (550, 130), 'path': (730, 130), 'cand': (10, 190), 'model': (190, 190), 'report': (370, 190), 'valid': (190, 250)}
 EDGES = [('verify', 'fastp'), ('fastp', 'star'), ('fastp', 'salmon'), ('star', 'sort'), ('sort', 'fc'), ('fc', 'qc'), ('salmon', 'qc'), ('qc', 'merge'),
-         ('merge', 'cohort'), ('cohort', 'de'), ('de', 'path'), ('path', 'cand'), ('cand', 'model'), ('model', 'report')]
+         ('merge', 'cohort'), ('cohort', 'de'), ('de', 'path'), ('path', 'cand'), ('cand', 'model'), ('model', 'report'), ('model', 'valid'), ('fc', 'qcx')]
 W, H = 160, 40
-MATRIX = [('FASTP', 'Trim'), ('STAR_ALIGN', 'Align'), ('SAMTOOLS_SORT_INDEX', 'Sort'), ('FEATURECOUNTS', 'Count'), ('SALMON_QUANT', 'Salmon'), ('SAMPLE_QC_FLAGS', 'QC')]
+MATRIX = [('FASTP', 'Trim'), ('STAR_ALIGN', 'Align'), ('SAMTOOLS_SORT_INDEX', 'Sort'), ('FEATURECOUNTS', 'Count'), ('SALMON_QUANT', 'Salmon'), ('STRAND_CHECK', 'Strand'), ('RNAQC_SAMPLE', 'RNA QC'), ('SAMPLE_QC_FLAGS', 'QC')]
 e = html.escape
 
 
@@ -24,7 +24,7 @@ def overall_percent(sts, job_status):
 
 def chart_svg(sts):
     by = {s['key']: s for s in sts}
-    out = ['<svg viewBox="0 0 900 250" width="100%" role="img" aria-label="Pipeline workflow with live status">',
+    out = ['<svg viewBox="0 0 900 300" width="100%" role="img" aria-label="Pipeline workflow with live status">',
            '<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#8a93a3"/></marker></defs>']
     for a, b in EDGES:
         (ax, ay), (bx, by_) = POS[a], POS[b]
@@ -44,8 +44,8 @@ def chart_svg(sts):
             sub = 'done' if s['status'] == 'done' else '%d done' % s['done']
         frac = min(1.0, s['done'] / s['expected']) if s['expected'] else (1.0 if s['status'] == 'done' else 0.0)
         out.append('<g class="st-%s"><title>%s: %s</title><rect class="box" x="%d" y="%d" width="%d" height="%d" rx="6"/>'
-                   '<text x="%d" y="%d">%s</text><text class="sub" x="%d" y="%d">%s</text><rect class="bar" x="%d" y="%d" width="%.1f" height="3"/></g>'
-                   % (s['status'], e(s['label']), e(s['what']), x, y, W, H, x + 8, y + 16, e(s['label']), x + 8, y + 32, e(sub), x + 2, y + H - 4, (W - 4) * frac))
+                   '<text x="%d" y="%d"%s>%s</text><text class="sub" x="%d" y="%d">%s</text><rect class="bar" x="%d" y="%d" width="%.1f" height="3"/></g>'
+                   % (s['status'], e(s['label']), e(s['what']), x, y, W, H, x + 8, y + 16, (' textLength="%d" lengthAdjust="spacingAndGlyphs"' % (W - 16)) if len(s['label']) > 22 else '', e(s['label']), x + 8, y + 32, e(sub), x + 2, y + H - 4, (W - 4) * frac))
     out.append('</svg>')
     return ''.join(out)
 

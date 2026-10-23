@@ -1,7 +1,7 @@
 """The pipeline as a chart: ordered stages with their Nextflow process names, and a status per stage computed from the task counts of a run.
 Pure functions (no I/O) so they can be tested without a pipeline."""
 
-PER_SAMPLE = {'VERIFY_FASTQ', 'FASTP', 'STAR_ALIGN', 'SAMTOOLS_SORT_INDEX', 'SAMTOOLS_STATS', 'FEATURECOUNTS', 'SALMON_QUANT', 'SAMPLE_QC_FLAGS'}
+PER_SAMPLE = {'VERIFY_FASTQ', 'FASTP', 'STAR_ALIGN', 'SAMTOOLS_SORT_INDEX', 'SAMTOOLS_STATS', 'FEATURECOUNTS', 'SALMON_QUANT', 'SAMPLE_QC_FLAGS', 'STRAND_CHECK', 'RNAQC_SAMPLE'}
 
 # lane: 'main' = one box in the main line; 'A' = STAR branch, 'B' = Salmon branch (both start after trimming and join at "Merge counts")
 # what = one plain sentence for users; tool = the program that does it
@@ -16,6 +16,8 @@ STAGES = [
          what='Sorts and indexes the alignments so they can be counted, and records alignment statistics.'),
     dict(key='fc', label='Count genes (featureCounts)', lane='A', procs=['FEATURECOUNTS'], tool='featureCounts',
          what='Counts the read pairs that fall on each gene. These counts are the main data for the analysis.'),
+    dict(key='qcx', label='Strand + RNA QC (flags)', lane='A', procs=['GTF_TO_BED12', 'STRAND_CHECK', 'MERGE_STRAND_CHECK', 'RNAQC_SUBSET', 'RNAQC_SAMPLE', 'MERGE_RNAQC'], tool='RSeQC',
+         what='Cross-checks the library strandedness read from Salmon against an independent RSeQC estimate, and measures duplication, transcript integrity, 3-prime bias, intronic share and rRNA/mitochondrial share. Flags only: nothing is excluded.'),
     dict(key='salmon', label='Quantify (Salmon)', lane='B', procs=['SALMON_QUANT'], tool='Salmon',
          what='A second, independent way to measure expression (without alignment). It cross-checks the gene counts and tells the library type.'),
     dict(key='qc', label='Sample QC', lane='main', procs=['SAMPLE_QC_FLAGS', 'MERGE_SAMPLE_QC', 'CHECK_QC'], tool='QC rules',
@@ -32,6 +34,8 @@ STAGES = [
          what='Keeps only genes that are significant, well expressed, change in the same direction on both routes, and stay significant when each sample is left out in turn.'),
     dict(key='model', label='Model + cutoff', lane='main', procs=['FIT_MODEL', 'PACKAGE_MODEL'], tool='LASSO (glmnet)',
          what='Picks a small gene panel and a score cutoff from the candidates. This needs enough samples; with too few it is skipped with a clear message.'),
+    dict(key='valid', label='Internal validation (report-only)', lane='main', procs=['INTERNAL_VALIDATION'], tool='glmnet, pROC',
+         what='Repeats the model fit inside resamples (nested cross-validation, bootstrap optimism, cutoff interval, selection frequency). Still optimistic: the candidate screen stays outside. Not independent validation.'),
     dict(key='report', label='Report', lane='main', procs=['REPORT'], tool='report script',
          what='Collects the tables and figures into one HTML report with the QC findings and the limitations.'),
 ]
