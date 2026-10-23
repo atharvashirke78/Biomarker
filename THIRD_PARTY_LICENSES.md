@@ -69,7 +69,7 @@ R packages that the scripts load but whose licence was not read in this inventor
 
 ## Open points for the owner and counsel
 
-1. Our own code has no LICENSE file (owner decision). Until there is one, nobody outside the owner has a right to reuse it.
+1. Our own code is MIT-licensed (`LICENSE`, 2026-10-23, owner decision). Ownership of AI-assisted code and the licences of third-party tools run as separate processes still need counsel's confirmation.
 2. Salmon 1.10.3 and subread are GPL-3.0, MultiQC and several R packages are GPL. The pipeline calls them as separate programs (command line, `Rscript`). Whether and how that constrains distribution of a bundle or hosted service must be decided by counsel; this file makes no such statement.
 3. The Salmon 2.x line was reported as BSD-3 on master and as "deterministic" in its release notes; if the pipeline moves to it, re-read the LICENSE of that tag and re-validate the numbers (upgrades.md H1b, H4g).
 4. Check the exact MSigDB release behind msigdbr 26.1.1 and the terms of any collection used.
