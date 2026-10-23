@@ -103,39 +103,15 @@ One command a new person runs (details: `docs/RUN_IN_5_STEPS.md`):
 
 `my_run` holds the FASTQ files and `metadata.csv`. Results go to `my_run/Result` (change with `--output_dir`). Add `--mode apply --cohort development` to score samples with the locked 9-gene model instead of discovering biomarkers.
 
-## 7. Frozen code identity
+## 7. Frozen code identity (updated 2026-10-23)
 
-Checkout `/workspace/Biomarker_pipeline_onewf`, branch `feat/one-workflow`, base commit `46c4860`, uncommitted.
+Repository `https://github.com/atharvashirke78/Biomarker`, branch `main`, code commit `a2c8890` (first commit of this repository; it does not contain the history of `/workspace/Biomarker_pipeline`, whose commit `46c4860` was the base of the code and whose lock tag is `lock-diagnostic-v1`).
 
-**Tree hash** (sha256 of `docs/FROZEN_FILES.sha256`): `7601f377082c6d242780481f0497a7bdcb98e4578dcbc6432f83c0e58e90d24a`
+`docs/FROZEN_FILES.sha256` lists the sha256 of the 186 tracked files in `nextflow/ modules/ scripts/ conf/ config/ lock/ tests/ service/ env/` as committed in `a2c8890`. Check from the repository root: `sha256sum -c docs/FROZEN_FILES.sha256` (0 failures on 2026-10-23). sha256 of that list: `728bd73308efeef5ac35deab0bbeb791fa2af6b1d5099e5d6fb84bc319b08128`.
+Lock: `sha256sum -c lock/diagnostic_v1/sha256sums_final.txt` gives 7 of 7 OK.
 
-`docs/FROZEN_FILES.sha256` lists the sha256 of every file in `nextflow/`, `modules/`, `scripts/`, `conf/`, `config/`, `lock/`, `tests/integration/` and `tests/regression/` (152 files, one line per file, sorted by path; test scripts and the one expected-values fixture only, no test outputs). Left out: work folders, results, data, `archive/`, and the generated `__pycache__` folders (`.pyc` files, rewritten on every run). Files per folder: nextflow 24, modules 21, scripts 72, conf 2, config 6, lock 11, tests 16.
+The three older manifests (2026-10-21, standardized, upgrade 2026-10-22) are in `archive/freeze_history/` and no longer match the tree; they are kept only as history.
 
-Re-check the whole manifest later, from the checkout root:
+Test state at `a2c8890` plus this file: stub suite 90 passed, 0 failed, 1 skipped (the byte-identity test against commit `46c4860` needs that commit's history); service tests 24 of 24; strandedness unit tests 7 of 7; real demo run (6 samples) 83 of 83 tasks, featureCounts counts byte-identical to the earlier run, sample QC statuses identical (Salmon mapped % differs in the last digit for 2 samples: known Salmon non-determinism). Not re-run in this repository: the 19-sample regression and the numeric acceptance (they need the 19-sample result folders).
 
-```
-sha256sum -c docs/FROZEN_FILES.sha256
-```
-
-Check run 2026-10-21 15:53:36 UTC: 152 files, 152 OK, 0 failed.
-
-Key files (the same hashes as in the manifest):
-
-| File | sha256 |
-|---|---|
-| `nextflow/main.nf` | `def24c211e8dedd25d7f0602ce498f2aad6f6fda75701cfeb54ae51038345d2a` |
-| `nextflow/nextflow.config` | `005d06326b56c36c1686064bbda67261b4c2e5dcad5879d78bb6f0c536320116` |
-| `conf/thresholds.config` | `3f4f75904e9cdedb92eac3e357bf17d612345cac5c22bfa46cb2aff7594e2d12` |
-| `conf/input.config` | `f7130f62eb94d168ba557fb7e7a8e167f9c2b13ad74c49ad5a87714b975f5696` |
-| `config/candidate_rules.yaml` | `a2f6a31b0838eb2ebcf539d679bb00f4fe6f6f26dcd91f2172c9512547b94ebc` |
-| `config/questions.yaml` | `d69b0b4c7597fc0603ab872988dcc4ad793108df9320f3ea71555beaa7d41cc7` |
-| `scripts/make_report.py` | `ce6a9321f55685a7999cf19c18c7557acb9553ba71272c7f1a7277dc24ec2075` |
-| `nextflow/bin/candidate_rules.R` | `76e98d6f8633707dd249d29b6cf1660cca8498f62e08dee7d632a057168b1be3` |
-| `nextflow/bin/fit_diagnostic_model.R` | `269e2f38621de3ca6c6338ac449dba38b1ab3ad98a11b5a2b9b3d931a5e6a2e9` |
-| `lock/diagnostic_v1/sha256sums_final.txt` | `37657d532d47c63cdf7b5d21c3dbc55133a79fb3e752b004eb05d800e3e53a6c` |
-
-`conf/input.config` differs from the base commit by one line, the approved `sample_id_regex`.
-
-All hashes taken: 2026-10-21 15:53:36 UTC (one pass, after the last code change of this cycle).
-
-After the commit, the commit id replaces this list as the identity.
+Note on sections 1-6 above: they describe the 2026-10-21 cycle and the old checkout; where they name `/workspace/Biomarker_pipeline_onewf` or "uncommitted", section 7 replaces them.
